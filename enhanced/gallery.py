@@ -108,59 +108,75 @@ def parse_html_log(choice):
     choice = choice.split('/')[0]
     html_file = os.path.join(os.path.join(config.path_outputs, '20' + choice), 'log.html')
     html = etree.parse(html_file, etree.HTMLParser(encoding='utf-8'))
+    
+    # Check if the new structure is present
+    if html.xpath('//div[@class="image-container"]'):
+        parse_new_structure(html, choice)
+    else:
+        parse_old_structure(html, choice)
+
+def parse_old_structure(html, choice):
     prompt_infos = html.xpath('/html/body/div')
     images_prompt[1] = []
     for info in prompt_infos:
-        text = info.xpath('.//p//text()')
-        if len(text)>20:
-            def standardized(x):
-                if x.startswith(', '):
-                    x=x[2:]
-                if x.endswith(': '):
-                    x=x[:-2]
-                if x==' ':
-                    x=''
-                return x
-            text = list(map(standardized, info.xpath('.//p//text()')))
-            if text[6]!='':
-                text.insert(6, '')
-            if text[8]=='':
-                text.insert(8, '')
-            info_dict={"Filename":text[0]}
-            if text[3]=='':
-                info_dict[text[1]] = text[2]
-                info_dict[text[4]] = text[5]
-                info_dict[text[7]] = text[8]
-                for i in range(0,int(len(text)/2)-5):
-                    info_dict[text[10+i*2]] = text[11+i*2]
-            else:
-                if text[4]!='Fooocus V2 Expansion':
-                    del text[6]
-                else:
-                    text.insert(4, '')
-                    if text[6]=='Styles':
-                        text.insert(6, '')
-                        del text[8]
-                    else:
-                        del text[7]
-                for i in range(0,int(len(text)/2)-1):
-                    info_dict[text[1+i*2]] = text[2+i*2]
+        def standardized(x):
+            if x.startswith(', '):
+                x = x[2:]
+            if x.endswith(': '):
+                x = x[:-2]
+            if x == ' ':
+                x = ''
+            return x
+        text = list(map(standardized, info.xpath('.//p//text()')))
+        if text[6] != '':
+            text.insert(6, '')
+        if text[8] == '':
+            text.insert(8, '')
+        info_dict = {"Filename": text[0]}
+        if text[3] == '':
+            info_dict[text[1]] = text[2]
+            info_dict[text[4]] = text[5]
+            info_dict[text[7]] = text[8]
+            for i in range(0, int(len(text) / 2) - 5):
+                info_dict[text[10 + i * 2]] = text[11 + i * 2]
         else:
-            text = info.xpath('.//td//text()')
-            if text[2]=='\n':
-                text.insert(2, '')
-            if text[5]=='\n':
-                text.insert(5, '')
-            if text[8]=='\n':
-                text.insert(8, '')
-            info_dict={"Filename":text[0]}
-            for i in range(0,int(len(text)/3)):
-                    info_dict[text[1+i*3]] = text[2+i*3]
-        #print(f'{len(text)},info_dict={info_dict}')
+            if text[4] != 'Fooocus V2 Expansion':
+                del text[6]
+            else:
+                text.insert(4, '')
+                if text[6] == 'Styles':
+                    text.insert(6, '')
+                    del text[8]
+                else:
+                    del text[7]
+                for i in range(0, int(len(text) / 2) - 1):
+                    info_dict[text[1 + i * 2]] = text[2 + i * 2]
         images_prompt[1].append(info_dict)
     images_prompt[0] = choice
     print(f'[ToolBox] Parse_html_log: loaded {len(images_prompt[1])} image_infos of {choice}.')
-    
+
+def parse_new_structure(html, choice):
+    prompt_infos = html.xpath('//div[@class="image-container"]')
+    images_prompt[1] = []
+    for info in prompt_infos:
+        filename = info.xpath('.//div/text()')[0]
+        metadata_entries = info.xpath('.//table[@class="metadata"]//tr')
+
+        info_dict = {"Filename": filename}
+        for entry in metadata_entries:
+            key_elements = entry.xpath('./td[@class="key"]/text()')
+            value_elements = entry.xpath('./td[@class="value"]/text()')
+
+            # Check if both key and value elements are present
+            if key_elements and value_elements:
+                key = key_elements[0].strip()
+                value = value_elements[0].strip()
+                info_dict[key] = value
+
+        images_prompt[1].append(info_dict)
+    images_prompt[0] = choice
+    print(f'[ToolBox] Parse_html_log: loaded {len(images_prompt[1])} image_infos of {choice}.')
+
 
 def select_gallery(choice, evt: gr.SelectData):
 
