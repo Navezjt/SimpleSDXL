@@ -510,4 +510,4 @@ def downloading_upscale_model():
 
 
 update_all_model_names()
- 
+
