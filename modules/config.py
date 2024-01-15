@@ -21,12 +21,6 @@ try:
         with open(config_path, "r", encoding="utf-8") as json_file:
             config_dict = json.load(json_file)
             always_save_keys = list(config_dict.keys())
-    else:
-        fooocus_config_path =  os.path.abspath("../Fooocus/config.txt")
-        if os.path.exists(fooocus_config_path):
-            with open(fooocus_config_path, "r", encoding="utf-8") as json_file:
-                config_dict = json.load(json_file)
-                always_save_keys = list(config_dict.keys())
 except Exception as e:
     print(f'Failed to load config file "{config_path}" . The reason is: {str(e)}')
     print('Please make sure that:')
@@ -283,11 +277,11 @@ embeddings_downloads = get_config_item_or_set_default(
 available_aspect_ratios = get_config_item_or_set_default(
     key='available_aspect_ratios',
     default_value=[
-        '768*1365', '896*1152', '915*1144', '1024*1024', '1152*896', '1182*886',
-        '1254*836', '1365*768', '1564*670', '704*1408', '704*1344', '768*1280',
-        '832*1216', '832*1152', '896*1088', '960*1088', '960*1024', '1024*960',
-        '1088*960', '1088*896', '1152*832', '1216*832', '1280*768', '1344*768',
-        '1344*704', '1408*704', '1472*704', '1536*640', '1600*640', '1664*576'
+       '704*1408', '704*1344', '768*1344', '768*1280', '832*1216', '832*1152',
+        '896*1152', '896*1088', '960*1088', '960*1024', '1024*1024', '1024*960',
+        '1088*960', '1088*896', '1152*896', '1152*832', '1216*832', '1280*768',
+        '1344*768', '1344*704', '1408*704', '1472*704', '1536*640', '1600*640',
+        '1664*576', '1728*576'
     ],
     validator=lambda x: isinstance(x, list) and all('*' in v for v in x) and len(x) > 1
 )
@@ -342,9 +336,6 @@ possible_preset_keys = [
     "default_prompt_negative",
     "default_styles",
     "default_aspect_ratio",
-    "default_cfg_tsnr",
-    "default_overwrite_step",
-    "default_overwrite_switch",
     "checkpoint_downloads",
     "embeddings_downloads",
     "lora_downloads",
@@ -365,19 +356,6 @@ def add_ratio(x):
     a, b = x.replace('*', ' ').split(' ')[:2]
     a, b = int(a), int(b)
     g = math.gcd(a, b)
-    if g<8:
-        if (a, b) == (768, 1365):
-            c, d = 9, 16
-        elif (a, b) == (915, 1144):
-            c, d = 4, 5
-        elif (a, b) == (1182, 886):
-            c, d = 4, 3
-        elif (a, b) == (1365, 768):
-            c, d = 16, 9
-        elif (a, b) == (1564, 670):
-            c, d = 21, 9
-    else:
-        c, d = a // g, b // g
     return f'{a}×{b} <span style="color: grey;"> \U00002223 {c}:{d}</span>'
 
 
