@@ -230,7 +230,7 @@ def delete_image(state_params):
             if page == 1:
                 choice = output_index[0]
             else:
-                choice = output_index[0] + '/' + page
+                choice = output_index[0] + '/' + str(page)
             gallery.refresh_output_list()
 
     state_params.update({"prompt_info":[choice, selected]})
@@ -290,14 +290,15 @@ def reset_params(state_params):
     results += [gr.update(value=info['Prompt']), gr.update(value=info['Negative Prompt']), gr.update(value=copy.deepcopy(styles)), \
             gr.update(value=info['Performance']),  gr.update(value=config.add_ratio(aspect_ratios)), gr.update(value=float(info['Sharpness'])), \
             gr.update(value=float(info['Guidance Scale'])), gr.update(value=info['Base Model']), gr.update(value=refiner_model), \
-            gr.update(value=float(info['Refiner Switch'])), gr.update(value=info['Sampler']), gr.update(value=info['Scheduler'])]
+            gr.update(value=float(info['Refiner Switch'])), gr.update(value=info['Sampler']), gr.update(value=info['Scheduler']), \
+            gr.update(), gr.update(), gr.update()]
     results += lora_results
     results += [gr.update(value=adm_scaler_positive), gr.update(value=adm_scaler_negative), gr.update(value=adm_scaler_end), gr.update(value=int(info['Seed']))]
     print(f'[ToolBox] Reset_params: update {len(results)} params from current image log file.')
     return results + [gr.update(visible=False)] * 2
 
 
-def save_preset(name, state_params, prompt, negative_prompt, style_selections, performance_selection, aspect_ratios_selection, sharpness, guidance_scale, base_model, refiner_model, refiner_switch, sampler_name, scheduler_name, lora_model1, lora_weight1, lora_model2, lora_weight2, lora_model3, lora_weight3, lora_model4, lora_weight4, lora_model5, lora_weight5):
+def save_preset(name, state_params, prompt, negative_prompt, style_selections, performance_selection, aspect_ratios_selection, sharpness, guidance_scale, base_model, refiner_model, refiner_switch, sampler_name, scheduler_name, adaptive_cfg, overwrite_step, overwrite_switch, lora_model1, lora_weight1, lora_model2, lora_weight2, lora_model3, lora_weight3, lora_model4, lora_weight4, lora_model5, lora_weight5):
 
     if name is not None and name != '':
         preset = {}
@@ -314,6 +315,9 @@ def save_preset(name, state_params, prompt, negative_prompt, style_selections, p
         preset["default_prompt_negative"] = negative_prompt
         preset["default_styles"] = style_selections
         preset["default_aspect_ratio"] = aspect_ratios_selection.split(' ')[0].replace(u'\u00d7','*')
+        preset["default_cfg_tsnr"]=adaptive_cfg
+        preset["default_overwrite_step"]=overwrite_step
+        preset["default_overwrite_switch"]=overwrite_switch
 
         def get_muid_link(k):
             muid = models_info[k]['muid']
@@ -347,8 +351,6 @@ def save_preset(name, state_params, prompt, negative_prompt, style_selections, p
         if lora_model5 and lora_model5 != 'None':
             preset["lora_downloads"].update({lora_model5: get_muid_link("loras/"+lora_model5)})
 
-        if url:
-            preset["reference"] = url
 
         #print(f'preset:{preset}')
         save_path = 'presets/' + name + '.json'
@@ -356,12 +358,10 @@ def save_preset(name, state_params, prompt, negative_prompt, style_selections, p
             json.dump(preset, json_file, indent=4)
 
         state_params.update({"__preset": name})
-        state_params.update({"preset_url": url})
         print(f'[ToolBox] Saved the current params and config to {save_path}.')
     state_params.update({"note_box_state": ['',0,0]})
     topbar.make_html()
     results = [gr.update(visible=False), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)]
-    results += [gr.update(visible=True if url else False, value=topbar.preset_instruction(state_params))]
 
     return results + [state_params]
 
