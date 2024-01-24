@@ -1,5 +1,5 @@
 {
-    "default_model": "DreamShaperXL_Turbo_dpmppSdeKarras_half_pruned_6.safetensors",
+    "default_model": "dreamshaperXL_turboDpmppSDE.safetensors",
     "default_refiner": "None",
     "default_refiner_switch": 0.5,
     "default_loras": [
@@ -41,7 +41,7 @@
     "default_overwrite_step": 6,
     "default_overwrite_switch": -1,
     "checkpoint_downloads": {
-        "DreamShaperXL_Turbo_dpmppSdeKarras_half_pruned_6.safetensors": "MUID:EWREihfScvqwCmEypWFy1V49Yb3wnhj2h"
+        "dreamshaperXL_turboDpmppSDE.safetensors": "https://huggingface.co/metercai/SimpleSDXL/resolve/main/checkpoints/dreamshaperXL_turboDpmppSDE.safetensors"
     },
     "embeddings_downloads": {},
     "lora_downloads": {}
