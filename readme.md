@@ -1,10 +1,10 @@
 ## SimpleSDXL - Fooocus中文孪生版
-<div align=center><img src="https://v2.token.tm/img/SimpleSDXL_2024_02_01.png"></div>
+<div align=center><img src="https://v2.token.tm/img/SimpleSDXL_2024_01_21.png"></div>
 
 ## 什么是SimpleSDXL？/ What's SimpleSDXL?
-- **化繁为简** AI的本质应该是化繁为简，让操作更简洁，让想法更易达成。SDXL的出图质量很出色，Fooocus的易用性非常棒，站在巨人的肩膀上有了SimpleSDXL。SimpleSDXL会以SDXL模型生态为核心，朝着开源可控，简洁易用，功能完善的方向更进一步。
+- **化繁为简** AI的本质应该是化繁为简，让操作更简洁，让想法更易达成。SimpleSDXL保持Fooocus的易用性，以SDXL模型生态为核心，朝着开源可控，简洁易用，功能完善的方向更进一步。
 - **中文适配** 中文环境与英语环境有很多差异。不仅仅在语言文字上，包括思维习惯、操作方式和网络环境都有很多不同。让中文用户使用更简单，用的更爽，也是SimpleSDXL的原始初衷。
-- **场景定制** 文生图和图生图有非常多的使用场景，需要更好的配置定制能力，进一步简化流程操作，直接面对使用场景，发挥出SDXL的强大能力。
+- **场景定制** 文生图和图生图有非常多的使用场景，需要更好的配置定制能力。SimpleSDXL以预置包和嵌参图片为基础，面向场景提升Fooocus的开放性和可定制性，发挥出SDXL的强大能力。
 
 ## 对比Fooocus的增强特色 / Enhanced features of Fooocus
 在Fooocus基础上增强功能，可无缝升级，同步迭代，并行使用。而且经过了手机适配，PC和手机也可同步操作。<br> 
@@ -14,13 +14,15 @@ Enhanced features base on Fooocus, seamless upgrading and dual versions availabl
   **Chinese English mixed prompts**:  Offline and online autonomous selection, support editing after translation, more suitable for Prompt.
 - **图片集浏览和管理**: 原生版仅能浏览当前生成的图片集，已生成图片管理非常简陋。 <br>
   **Finished image sets browsing and management**:  Fooocus only can browse the current generated image set. Finished images management is very simple.
-- **查看参数和提取重生**: 可即时查看已出图片的生成参数，也可提取参数回填界面，二次生成。 <br>
-  **View parameters and extract regeneration**:  Can view the generation parameters of finished images, and can also extract parameters to backfill for secondary generation.
+- **嵌参图片和提参重生**: 增强的参数管理，可即时查看可嵌入图片，也可提取参数回填界面，二次生成。 <br>
+  **Embeded images and extract regeneration**:  Enhanced parameter management for instant viewing and embedding of images, and can also extract parameters to backfill for secondary generation.
 - **增强预置包和模型下载**: 预置包可通过界面切换和生成，模型下载会根据IP自动选择内外源。 <br>
   **Enhanced preset and adapted for download**:  The preset can be switched and generated through UI, and the model download will automatically select sources based on the access IP.
 
 ## 🔔 更新 / Update
-- [2024.01.08] <b>新年第二版：图片工具增加新特性：浏览图片可自动回填提示词，联动删除坏图文件和日志记录。混编翻译器启动稳定性修补，增加不翻译模式。同步主线v2.1.861，新增风格选择浮层示意图。</b>
+- [2023.01.20] <b>预置包优化版：预置包导航重构，实现session based的预置包加载，没有浏览器重载过程，更轻量更快速。预置包、嵌参图片和提参重生接口优化，扩充可预置和嵌参的范围，支持Turbo类模型和自定义风格样式的嵌参和预置。</b>
+- [2023.01.16] 新年第三版：嵌参图片上线，可以生成嵌参图片，可以上传识别嵌参图片。从参数查看到提参重生，从预置包导航到预置包生成，最后到嵌参图片，这一些列简化参数配置和使用的功能终于闭环了。启动流程优化，平行升级版支持自动获取主线配置，免配置模型目录和出图目录，新增国内下载源。界面多处优化，混编翻译器增加不翻译选项等。
+- [2024.01.08] 新年第二版：图片工具增加新特性：浏览图片可自动回填提示词，联动删除坏图文件和日志记录。混编翻译器启动稳定性修补，增加不翻译模式。同步主线v2.1.861，新增风格选择浮层示意图。
 - [2024.01.01] 新年新版本：界面交互优化，状态信息迁移到会话(session)，多浏览器访问互不干扰。优化了手机访问界面，PC和手机可同步使用。生成图片过程中禁止预置包切换，保障出图过程的完整。增加相册缓存，提升历史图片索引切换速度。修复模型路径bug，同步主线版本v2.1.859。
 - [2023.12.30] 提示词翻译器升级：支持中英文混合编辑，支持翻译后再编辑，可自主选择本地模型翻译还是第三方接口翻译，提升提示词翻译器的总体可用性和可控性，翻译质量也能得到保障，应该是目前文生图提示词翻译器的最佳实践了。同步主线v2.1.856。
 - [2023.12.28] 重要更新：底层代码结构重构，相册图集、顶部导航、右侧工具箱解耦。预置包生成流程和加载流程优化，启用MUID模型文件标识，文件名不同自动转换，本地无模型文件自动下载，自动识别embeddings模型，模型MUID标识同步改手动触发。顶部导航视觉优化，新增日志消息提示层，提取和展示Fooocus和SimpleSDXL的最新更新日志，增强互动。本次更新为由预置包和嵌参图片组成的开放系统打下基础，以实现多场景适配的定制能力。同步主线v2.1.855。

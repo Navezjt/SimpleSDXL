@@ -143,9 +143,9 @@ def worker():
         inpaint_additional_prompt = args.pop()
         inpaint_mask_image_upload = args.pop()
 
-        if enhanced_parameters.translation_timing != 'No translation':
-            prompt = translator.convert(prompt)
-            negative_prompt = translator.convert(negative_prompt)
+        if enhanced_parameters.translation_timing != 'No translate':
+            prompt = translator.convert(prompt, enhanced_parameters.translation_methods)
+            negative_prompt = translator.convert(negative_prompt, enhanced_parameters.translation_methods)
 
         cn_tasks = {x: [] for x in flags.ip_list}
         for _ in range(4):
@@ -804,7 +804,8 @@ def worker():
                     for li, (n, w) in enumerate(loras):
                         if n != 'None':
                             d.append((f'LoRA {li + 1}', f'{n} : {w}'))
-                    d.append(('Version', 'v' + fooocus_version.version))
+                    import enhanced.version as version
+                    d.append(('Version', 'v' + fooocus_version.version + f' {version.branch}_{version.get_simplesdxl_ver()}'))
                     log(x, d)
 
                 yield_result(async_task, imgs, do_not_show_finished_images=len(tasks) == 1)

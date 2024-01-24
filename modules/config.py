@@ -5,6 +5,7 @@ import numbers
 import args_manager
 import modules.flags
 import modules.sdxl_styles
+import modules.advanced_parameters as ads
 
 from modules.model_loader import load_file_from_url
 from modules.util import get_files_from_folder
@@ -22,9 +23,9 @@ try:
             config_dict = json.load(json_file)
             always_save_keys = list(config_dict.keys())
     else:
-        fooocus_config_path =  os.path.abspath("../Fooocus/config.txt")
-        if os.path.exists(fooocus_config_path):
-            with open(fooocus_config_path, "r", encoding="utf-8") as json_file:
+        config_path =  os.path.abspath("../Fooocus/config.txt")
+        if os.path.exists(config_path):
+            with open(config_path, "r", encoding="utf-8") as json_file:
                 config_dict = json.load(json_file)
                 always_save_keys = list(config_dict.keys())
 except Exception as e:
@@ -212,12 +213,12 @@ default_sample_sharpness = get_config_item_or_set_default(
 )
 default_sampler = get_config_item_or_set_default(
     key='default_sampler',
-    default_value='dpmpp_2m_sde_gpu',
+    default_value=ads.default['sampler_name'],
     validator=lambda x: x in modules.flags.sampler_list
 )
 default_scheduler = get_config_item_or_set_default(
     key='default_scheduler',
-    default_value='karras',
+    default_value=ads.default['scheduler_name'],
     validator=lambda x: x in modules.flags.scheduler_list
 )
 default_styles = get_config_item_or_set_default(
@@ -283,8 +284,8 @@ embeddings_downloads = get_config_item_or_set_default(
 available_aspect_ratios = get_config_item_or_set_default(
     key='available_aspect_ratios',
     default_value=[
-        '768*1365', '896*1152', '915*1144', '1024*1024', '1152*896', '1182*886',
-        '1254*836', '1365*768', '1564*670', '704*1408', '704*1344', '768*1280',
+        '768*1366', '896*1152', '915*1144', '1024*1024', '1152*896', '1182*886',
+        '1254*836', '1366*768', '1564*670', '704*1408', '704*1344', '768*1280',
         '832*1216', '832*1152', '896*1088', '960*1088', '960*1024', '1024*960',
         '1088*960', '1088*896', '1152*832', '1216*832', '1280*768', '1344*768',
         '1344*704', '1408*704', '1472*704', '1536*640', '1600*640', '1664*576'
@@ -298,22 +299,22 @@ default_aspect_ratio = get_config_item_or_set_default(
 )
 default_inpaint_engine_version = get_config_item_or_set_default(
     key='default_inpaint_engine_version',
-    default_value='v2.6',
+    default_value=ads.default['inpaint_engine'],
     validator=lambda x: x in modules.flags.inpaint_engine_versions
 )
 default_cfg_tsnr = get_config_item_or_set_default(
     key='default_cfg_tsnr',
-    default_value=7.0,
+    default_value=ads.default['adaptive_cfg'],
     validator=lambda x: isinstance(x, numbers.Number)
 )
 default_overwrite_step = get_config_item_or_set_default(
     key='default_overwrite_step',
-    default_value=-1,
+    default_value=ads.default['overwrite_step'],
     validator=lambda x: isinstance(x, int)
 )
 default_overwrite_switch = get_config_item_or_set_default(
     key='default_overwrite_switch',
-    default_value=-1,
+    default_value=ads.default['overwrite_switch'],
     validator=lambda x: isinstance(x, int)
 )
 example_inpaint_prompts = get_config_item_or_set_default(
@@ -366,13 +367,13 @@ def add_ratio(x):
     a, b = int(a), int(b)
     g = math.gcd(a, b)
     if g<8:
-        if (a, b) == (768, 1365):
+        if (a, b) == (768, 1366):
             c, d = 9, 16
         elif (a, b) == (915, 1144):
             c, d = 4, 5
         elif (a, b) == (1182, 886):
             c, d = 4, 3
-        elif (a, b) == (1365, 768):
+        elif (a, b) == (1366, 768):
             c, d = 16, 9
         elif (a, b) == (1564, 670):
             c, d = 21, 9
