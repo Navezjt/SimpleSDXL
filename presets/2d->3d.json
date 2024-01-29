@@ -1,0 +1,52 @@
+{
+    "default_model": "juggernautXL_version6Rundiffusion.safetensors",
+    "default_refiner": "3dAnimationDiffusion_v10.safetensors",
+    "default_refiner_switch": 0.8,
+    "default_loras": [
+        [
+            "dongsen_xl.safetensors",
+            0.2
+        ],
+        [
+            "3dmodel_cute3d.safetensors",
+            0.8
+        ],
+        [
+            "None",
+            1
+        ],
+        [
+            "None",
+            1
+        ],
+        [
+            "None",
+            1
+        ]
+    ],
+    "default_cfg_scale": 5,
+    "default_sample_sharpness": 2,
+    "default_sampler": "dpmpp_2m_sde_gpu",
+    "default_scheduler": "karras",
+    "default_performance": "Quality",
+    "default_prompt": "",
+    "default_prompt_negative": "",
+    "default_styles": [
+        "Fooocus V2",
+        "SAI 3D Model",
+        "Fooocus Sharp"
+    ],
+    "default_aspect_ratio": "768*1280",
+    "default_cfg_tsnr": 7,
+    "default_overwrite_step": -1,
+    "default_overwrite_switch": -1,
+    "checkpoint_downloads": {
+        "juggernautXL_version6Rundiffusion.safetensors": "https://huggingface.co/lllyasviel/fav_models/resolve/main/fav/juggernautXL_version6Rundiffusion.safetensors",
+        "3dAnimationDiffusion_v10.safetensors": "https://huggingface.co/oyang/ihn_simplesdxl_models/resolve/main/3dAnimationDiffusion_v10.safetensors"
+    },
+    "embeddings_downloads": {},
+    "lora_downloads": {
+        "dongsen_xl.safetensors": "https://huggingface.co/oyang/ihn_simplesdxl_models/resolve/main/dongsen_xl.safetensors",
+        "3dmodel_cute3d.safetensors": "https://huggingface.co/oyang/ihn_simplesdxl_models/resolve/main/3dmodel_cute3d.safetensors"
+    }
+}
