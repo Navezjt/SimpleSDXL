@@ -22,7 +22,10 @@ import enhanced.version as version
 
 from build_launcher import build_launcher, is_win32_standalone_build, python_embeded_path
 from modules.launch_util import is_installed, run, python, run_pip, requirements_met
+from modules.model_loader import load_file_from_url
 
+from modules.config import path_checkpoints, path_loras, path_vae_approx, path_fooocus_expansion, \
+    checkpoint_downloads, path_embeddings, embeddings_downloads, lora_downloads
 
 REINSTALL_ALL = False
 TRY_INSTALL_XFORMERS = False
@@ -84,18 +87,14 @@ vae_approx_filenames = [
 
 
 def download_models():
-    from modules.model_loader import load_file_from_url
-    from modules.config import path_checkpoints, path_loras, path_vae_approx, path_fooocus_expansion, \
-        checkpoint_downloads, path_embeddings, embeddings_downloads, lora_downloads
-
+    for file_name, url in checkpoint_downloads.items():
+        load_file_from_url(url=url, model_dir=path_checkpoints, file_name=file_name)
     for file_name, url in embeddings_downloads.items():
         load_file_from_url(url=url, model_dir=path_embeddings, file_name=file_name)
     for file_name, url in lora_downloads.items():
         load_file_from_url(url=url, model_dir=path_loras, file_name=file_name)
     for file_name, url in vae_approx_filenames:
         load_file_from_url(url=url, model_dir=path_vae_approx, file_name=file_name)
-    for file_name, url in checkpoint_downloads.items():
-        load_file_from_url(url=url, model_dir=path_checkpoints, file_name=file_name)
 
     load_file_from_url(
         url='https://huggingface.co/lllyasviel/misc/resolve/main/fooocus_expansion.bin',
@@ -104,6 +103,28 @@ def download_models():
     )
 
     return
+
+# def download_models():
+#     from modules.model_loader import load_file_from_url
+#     from modules.config import path_checkpoints, path_loras, path_vae_approx, path_fooocus_expansion, \
+#         checkpoint_downloads, path_embeddings, embeddings_downloads, lora_downloads
+
+#     for file_name, url in embeddings_downloads.items():
+#         load_file_from_url(url=url, model_dir=path_embeddings, file_name=file_name)
+#     for file_name, url in lora_downloads.items():
+#         load_file_from_url(url=url, model_dir=path_loras, file_name=file_name)
+#     for file_name, url in vae_approx_filenames:
+#         load_file_from_url(url=url, model_dir=path_vae_approx, file_name=file_name)
+#     for file_name, url in checkpoint_downloads.items():
+#         load_file_from_url(url=url, model_dir=path_checkpoints, file_name=file_name)
+
+#     load_file_from_url(
+#         url='https://huggingface.co/lllyasviel/misc/resolve/main/fooocus_expansion.bin',
+#         model_dir=path_fooocus_expansion,
+#         file_name='pytorch_model.bin'
+#     )
+
+#     return
 
 
 def ini_args():
@@ -139,11 +160,11 @@ if location.location !='CN':
 import socket
 if '--listen' not in sys.argv:
     if is_ipynb():
-        args.listen = '127.0.0.1'
+        args.listen = '0.0.0.0'
     else:
         args.listen = socket.gethostbyname(socket.gethostname())
 if '--port' not in sys.argv:
-    args.port = 8186
+    args.port = 6067
 
 download_models()
 

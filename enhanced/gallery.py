@@ -9,6 +9,8 @@ import enhanced.toolbox as toolbox
 from lxml import etree
 
 
+
+
 # app context
 output_list = []
 max_per_page = 28
@@ -18,6 +20,8 @@ images_list_keys = []
 images_prompt = {}
 images_prompt_keys = []
 images_ads = {}
+
+
 
 def refresh_output_list():
     global output_list, max_per_page
