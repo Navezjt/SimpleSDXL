@@ -142,7 +142,10 @@ def worker():
         inpaint_input_image = args.pop()
         inpaint_additional_prompt = args.pop()
         inpaint_mask_image_upload = args.pop()
-
+        
+        # usr id
+        state = args[0]
+        cookie = state["__cookie"]
         if enhanced_parameters.translation_timing != 'No translate':
             prompt = translator.convert(prompt, enhanced_parameters.translation_methods)
             negative_prompt = translator.convert(negative_prompt, enhanced_parameters.translation_methods)
@@ -517,7 +520,7 @@ def worker():
 
             if direct_return:
                 d = [('Upscale (Fast)', '2x')]
-                log(uov_input_image, d)
+                log(uov_input_image, d, cookie)
                 yield_result(async_task, uov_input_image, do_not_show_finished_images=True)
                 return
 
@@ -806,7 +809,7 @@ def worker():
                             d.append((f'LoRA {li + 1}', f'{n} : {w}'))
                     import enhanced.version as version
                     d.append(('Version', 'v' + fooocus_version.version + f' {version.branch}_{version.get_simplesdxl_ver()}'))
-                    log(x, d)
+                    log(x, d, cookie)
 
                 yield_result(async_task, imgs, do_not_show_finished_images=len(tasks) == 1)
             except ldm_patched.modules.model_management.InterruptProcessingException as e:

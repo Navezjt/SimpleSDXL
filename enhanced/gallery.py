@@ -15,15 +15,21 @@ images_list_keys = []
 images_prompt = {}
 images_prompt_keys = []
 images_ads = {}
-
-def refresh_output_list(max_per_page):
-
-    listdirs = [f for f in os.listdir(config.path_outputs) if f!="embed" and os.path.isdir(os.path.join(config.path_outputs,f))]
+history_path = ""
+def refresh_output_list(max_per_page, cookie='default'):
+    global history_path
+    history_path = os.path.join(config.path_outputs, cookie)
+    # history_path = os.path.join(config.path_outputs, 'default')
+    if not os.path.exists(history_path):
+        os.mkdir(history_path)
+    # print(f"[LOGINFO] {history_path}")
+    
+    listdirs = [f for f in os.listdir(history_path) if f!="embed" and os.path.isdir(os.path.join(history_path,f))]
     if listdirs is None:
         return None
     listdirs1 = listdirs.copy()
     for index in listdirs:
-        path_gallery = os.path.join(config.path_outputs, index)
+        path_gallery = os.path.join(history_path, index)
         nums = len(util.get_files_from_folder(path_gallery, ['.png'], None))
         if nums > max_per_page:
             for i in range(1,math.ceil(nums/max_per_page)+1):
@@ -36,7 +42,7 @@ def refresh_output_list(max_per_page):
 
 def images_list_update(choice, state_params):
     if "__output_list" not in state_params.keys():
-        return  gr.update(), gr.update(), state_params
+        return gr.update(), gr.update(), state_params
     output_list = state_params["__output_list"]
     if choice is None and len(output_list) > 0:
         choice = output_list[0]
@@ -70,12 +76,14 @@ def select_gallery(choice, state_params, backfill_prompt, evt: gr.SelectData):
 def select_gallery_progress(state_params, evt: gr.SelectData):
     state_params.update({"note_box_state": ['',0,0]})
     state_params.update({"prompt_info": [None, evt.index]})
+    # output_list = state_params["__output_list"]
+    # print(f"[LOGINFO] {output_list}")
     result = get_images_prompt(state_params["__output_list"][0], evt.index, state_params["__max_per_page"])
     return [gr.update(value=toolbox.make_infobox_markdown(result), visible=False)] + [gr.update(visible=False)] * 4 + [state_params]
 
 
 def get_images_from_gallery_index(choice, max_per_page):
-    global images_list
+    global images_list, history_path
 
     page = 0
     _page = choice.split("/")
@@ -91,13 +99,13 @@ def get_images_from_gallery_index(choice, max_per_page):
             images_gallery = images_list[choice][(page-1)*max_per_page:page*max_per_page]
         else:
             images_gallery = images_list[choice][nums-max_per_page:]
-    images_gallery = [os.path.join(os.path.join(config.path_outputs, '20' + choice), f) for f in images_gallery]
+    images_gallery = [os.path.join(os.path.join(history_path, '20' + choice), f) for f in images_gallery]
     #print(f'[Gallery]Get images from index: choice={choice}, page={page}, images_gallery={images_gallery}')
     return images_gallery
 
 
 def refresh_images_catalog(choice: str, passthrough = False):
-    global images_list, images_list_keys
+    global images_list, images_list_keys, history_path
 
     if not passthrough and choice in images_list_keys:
         images_list_keys.remove(choice)
@@ -105,7 +113,7 @@ def refresh_images_catalog(choice: str, passthrough = False):
         #print(f'[Gallery] Refresh_images_list: hit cache {len(images_list[choice])} image_items of {choice}.')
         return images_list[choice]
 
-    images_list_new = sorted([f for f in util.get_files_from_folder(os.path.join(config.path_outputs, '20' + choice), ['.png'], None)], reverse=True)
+    images_list_new = sorted([f for f in util.get_files_from_folder(os.path.join(history_path, '20' + choice), ['.png'], None)], reverse=True)
     if len(images_list_new)==0:
         parse_html_log(choice, passthrough)
         if choice in images_list_keys:
@@ -155,7 +163,7 @@ def get_images_prompt(choice, selected, max_per_page, display_index=False):
 
 
 def parse_html_log(choice: str, passthrough = False):
-    global images_prompt, images_prompt_keys, images_ads
+    global images_prompt, images_prompt_keys, images_ads, history_path
     
     choice = choice.split('/')[0]
     if not passthrough and choice in images_prompt_keys and images_prompt[choice]:
@@ -163,7 +171,7 @@ def parse_html_log(choice: str, passthrough = False):
         images_prompt_keys.append(choice)
         #print(f'[Gallery] Parse_html_log: hit cache {len(images_prompt[choice])} image_infos of {choice}.')
         return
-    html_file = os.path.join(os.path.join(config.path_outputs, '20' + choice), 'log.html')
+    html_file = os.path.join(os.path.join(history_path, '20' + choice), 'log.html')
     html = etree.parse(html_file, etree.HTMLParser(encoding='utf-8'))
     prompt_infos = html.xpath('/html/body/div')
     images_prompt_list = {}

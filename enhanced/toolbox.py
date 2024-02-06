@@ -249,7 +249,7 @@ def delete_image(state_params):
         os.remove(log_path)
         os.rmdir(dir_path)
         index = state_params["__output_list"].index(choice)
-        state_params.update({"__output_list": gallery.refresh_output_list(state_params["__max_per_page"])})
+        state_params.update({"__output_list": gallery.refresh_output_list(state_params["__max_per_page"], state_params["__cookie"])})
         if index>= len(state_params["__output_list"]):
             index = len(state_params["__output_list"]) -1
             if index<0:
@@ -267,7 +267,7 @@ def delete_image(state_params):
                 choice = output_index[0]
             else:
                 choice = output_index[0] + '/' + str(page)
-            state_params.update({"__output_list": gallery.refresh_output_list(state_params["__max_per_page"])})
+            state_params.update({"__output_list": gallery.refresh_output_list(state_params["__max_per_page"], state_params["__cookie"])})
 
     state_params.update({"prompt_info":[choice, selected]})
     images_gallery = gallery.get_images_from_gallery_index(choice, state_params["__max_per_page"])

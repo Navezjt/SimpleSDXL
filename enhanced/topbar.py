@@ -271,6 +271,8 @@ def init_nav_bars(state_params, request: gr.Request):
         state_params.update({"__preset": config.preset})
     if "__session" not in state_params.keys() and "cookie" in request.headers.keys():
         cookies = dict([(s.split('=')[0], s.split('=')[1]) for s in request.headers["cookie"].split('; ')])
+        if '_gid' in cookies.keys():
+            state_params.update({'__cookie': cookies['_gid']})
         if "SESSION" in cookies.keys():
             state_params.update({"__session": cookies["SESSION"]})
     user_agent = request.headers["user-agent"]
@@ -283,7 +285,7 @@ def init_nav_bars(state_params, request: gr.Request):
             state_params.update({"__max_per_page": 9})
         else:
             state_params.update({"__max_per_page": 18})
-    state_params.update({"__output_list": gallery_util.refresh_output_list(state_params["__max_per_page"])})
+    state_params.update({"__output_list": gallery_util.refresh_output_list(state_params["__max_per_page"], state_params["__cookie"])})
     #print(f'system_params:{state_params}')
     results = refresh_nav_bars(state_params)
     results += [gr.update(value="enhanced/attached/welcome_m.png")] if state_params["__is_mobile"] else [gr.update()]
@@ -323,13 +325,14 @@ def process_before_generation(state_params):
     preset_nums = len(state_params["__nav_name_list"].split(','))
     results += [gr.update(interactive=False)] * (preset_nums + 1)
     results += [gr.update()] * (9-preset_nums)
+    # print("[LOGINFO]" + state_params["__cookie"])
     return results
 
 
 def process_after_generation(state_params):
     if "__max_per_page" not in state_params.keys():
         state_params.update({"__max_per_page": 18})
-    state_params.update({"__output_list": gallery_util.refresh_output_list(state_params["__max_per_page"])})
+    state_params.update({"__output_list": gallery_util.refresh_output_list(state_params["__max_per_page"], state_params["__cookie"])})
     # generate_button, stop_button, skip_button, state_is_generating
     results = [gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), gr.update(visible=False, interactive=False), False]
     # gallery_index, index_radio

@@ -32,6 +32,16 @@ import enhanced.version as version
 import enhanced.location as location
 from enhanced.models_info import models_info, sync_model_info_click 
 
+
+def tokeninfo(request: gr.Request):
+    try:
+        cookie = request.headers['cookie']
+        filename = cookie.split(';')[0]
+        return filename
+    except Exception as e:
+        # logging.error("An error occurred: %s", e, exc_info=True)
+        raise e  # Re-raise the exception to handle it as usual (or you can return an error message)
+
 def generate_clicked(*args):
     import ldm_patched.modules.model_management as model_management
 
@@ -98,6 +108,7 @@ shared.gradio_root = gr.Blocks(
 
 with shared.gradio_root:
     state_topbar = gr.State({})
+   
     with gr.Row():
         with gr.Column(scale=2):
             with gr.Group():
@@ -113,8 +124,9 @@ with shared.gradio_root:
                     bar7_button = gr.Button(value='', size='sm', visible=True, min_width=70, elem_id='bar7', elem_classes='bar_button')
                     bar8_button = gr.Button(value='', size='sm', visible=True, min_width=70, elem_id='bar8', elem_classes='bar_button')
                 with gr.Row():
-                    progress_window = grh.Image(label='Preview', show_label=True, visible=True, height=768, elem_id='preview_generating',
-                                            elem_classes=['main_view'], value="enhanced/attached/welcome.png")
+                    progress_window = grh.Image(label='Preview', show_label=True, visible=True, height=768, elem_id='preview_generating',  elem_classes=['main_view'])
+
+                    # progress_window = grh.Image(label='Preview', show_label=True, visible=True, height=768, elem_id='preview_generating',  elem_classes=['main_view'], value="enhanced/attached/welcome.png")
                     progress_gallery = gr.Gallery(label='Finished Images', show_label=True, object_fit='contain', elem_id='finished_gallery',
                                               height=520, visible=False, elem_classes=['main_view', 'image_gallery'])
                 progress_html = gr.HTML(value=modules.html.make_progress_html(32, 'Progress 32%'), visible=False,
@@ -344,10 +356,12 @@ with shared.gradio_root:
 
                 seed_random.change(random_checked, inputs=[seed_random], outputs=[image_seed],
                                    queue=False, show_progress=False)
-
+                # print(f"[LOGINFO] {state_topbar.value}")
                 if not args_manager.args.disable_image_log:
-                    gr.HTML(f'<a href="{args_manager.args.webroot}/file={get_current_html_path()}" target="_blank">\U0001F4DA History Log</a>')
-
+                    if "__cookie" in state_topbar.value.keys():
+                        gr.HTML(f'<a href="{args_manager.args.webroot}/file={get_current_html_path(state_topbar.value["__cookie"])}" target="_blank">\U0001F4DA History Log</a>')
+                    else:
+                        gr.HTML(f'<a href="{args_manager.args.webroot}/file={get_current_html_path()}" target="_blank">\U0001F4DA History Log</a>')
             with gr.Tab(label='Style', elem_classes=['style_selections_tab']):
                 style_sorter.try_load_sorted_styles(
                     style_names=legal_style_names,
@@ -682,6 +696,10 @@ with shared.gradio_root:
         ctrls += [outpaint_selections, inpaint_input_image, inpaint_additional_prompt, inpaint_mask_image]
         ctrls += ip_ctrls
         
+        # if "__cookie" in state_topbar.value.keys():
+        #     ctrls.append(state_topbar.value["__cookie"])
+        # else:
+        #     ctrls.append("default")
         system_params = gr.JSON({}, visible=False)
         state_is_generating = gr.State(False)
         def parse_meta(raw_prompt_txt, is_generating, timing):
@@ -743,7 +761,7 @@ with shared.gradio_root:
             .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
             .then(advanced_parameters.set_all_advanced_parameters, inputs=adps) \
             .then(enhanced_parameters.set_all_enhanced_parameters, inputs=ehps) \
-            .then(fn=generate_clicked, inputs=ctrls, outputs=[progress_html, progress_window, progress_gallery, gallery]) \
+            .then(fn=generate_clicked, inputs=ctrls + [state_topbar], outputs=[progress_html, progress_window, progress_gallery, gallery]) \
             .then(topbar.process_after_generation, inputs=state_topbar, outputs=[generate_button, stop_button, skip_button, state_is_generating, gallery_index, index_radio, background_theme, bar0_button, bar1_button, bar2_button, bar3_button, bar4_button, bar5_button, bar6_button, bar7_button, bar8_button], show_progress=False) \
             .then(fn=lambda: None, _js='playNotification').then(fn=lambda: None, _js='refresh_grid_delayed')
 
@@ -780,7 +798,6 @@ with shared.gradio_root:
 
         params_btn.click(toolbox.extract_reset_image_params, inputs=desc_input_image, outputs=reset_params, show_progress=False, queue=True) \
                    .then(fn=lambda: None, _js=toolbox.extract_reset_image_params_js)
-
     prompt_delete_button.click(toolbox.toggle_note_box_delete, inputs=state_topbar, outputs=[params_note_info, params_note_delete_button, params_note_box, state_topbar], show_progress=False)
     params_note_delete_button.click(toolbox.delete_image, inputs=state_topbar, outputs=[gallery, gallery_index, params_note_delete_button, params_note_box, state_topbar], show_progress=False)
     
