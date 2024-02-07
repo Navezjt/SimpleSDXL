@@ -36,11 +36,10 @@ def set_all_advanced_parameters(*args):
 def get_diff_for_log_ext():
     log_ext = {}
     diff_ads =  get_diff_from_default()
+    ads_params_list = ['adaptive_cfg', 'overwrite_step', 'overwrite_switch', 'inpaint_engine']
     for k in diff_ads.keys():
-        if k!="adm_scaler_positive" and k!="adm_scaler_negative" and k!="adm_scaler_end" and k!="sampler_name" and k!="scheduler_name":
-            # log_ext.update({f'{k}', diff_ads[k]})
-            log_ext.update({f'{k}': v for k, v in diff_ads.items()})
-
+        if k in ads_params_list:
+            log_ext.update({f'{k}': diff_ads[k]})
     return log_ext
 
 default = {
@@ -76,7 +75,7 @@ default = {
     'inpaint_engine': 'v2.6',
     'inpaint_strength': 1,
     'inpaint_respective_field': 0.618,
-    'inpaint_mask_upload_checkbox': False,
+    'inpaint_mask_upload_checkbox': True,
     'invert_mask_checkbox': False,
     'inpaint_erode_or_dilate': 0
     }

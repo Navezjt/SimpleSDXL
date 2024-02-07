@@ -4,28 +4,38 @@ import modules.config
 import json
 import urllib.parse
 import modules.advanced_parameters as ads
+import enhanced.enhanced_parameters as ehs
+import enhanced.toolbox as toolbox
 
 from PIL import Image
+from PIL.PngImagePlugin import PngInfo
 from modules.util import generate_temp_filename
 
 
 log_cache = {}
 
 
-def get_current_html_path():
-    date_string, local_temp_filename, only_name = generate_temp_filename(folder=modules.config.path_outputs,
+def get_current_html_path(cookie="default"):
+    date_string, local_temp_filename, only_name = generate_temp_filename(folder=os.path.join(modules.config.path_outputs,cookie),
                                                                          extension='png')
     html_name = os.path.join(os.path.dirname(local_temp_filename), 'log.html')
     return html_name
 
 
-def log(img, dic):
+def log(img, dic, cookie="default"):
     if args_manager.args.disable_image_log:
         return
 
-    date_string, local_temp_filename, only_name = generate_temp_filename(folder=modules.config.path_outputs, extension='png')
+    date_string, local_temp_filename, only_name = generate_temp_filename(folder=os.path.join(modules.config.path_outputs,cookie), extension='png')
     os.makedirs(os.path.dirname(local_temp_filename), exist_ok=True)
-    Image.fromarray(img).save(local_temp_filename)
+    if ehs.embed_metadata_checkbox:
+        pnginfo = PngInfo()
+        metadata = toolbox.get_embed_metadata(dict(dic))
+        pnginfo.add_text("Comment", json.dumps(metadata), True)
+    else:
+        pnginfo = None
+    Image.fromarray(img).save(local_temp_filename, pnginfo=pnginfo)
+
     html_name = os.path.join(os.path.dirname(local_temp_filename), 'log.html')
 
     css_styles = (
@@ -120,9 +130,13 @@ def log_ext(file_name):
         with open(log_name, "r", encoding="utf-8") as log_file:
             log_ext.update(json.load(log_file))
     
-    log_ext.update({filename: ads.get_diff_for_log_ext()})
+    ads_ext = ads.get_diff_for_log_ext()
+    if len(ads_ext.keys())==0:
+        return
+
+    log_ext.update({filename: ads_ext})
 
     with open(log_name, 'w', encoding='utf-8') as log_file:
         json.dump(log_ext, log_file)
 
-    print(f'Image generated with params log at: {log_name}')
+    print(f'Image generated with advanced params log at: {log_name}')
