@@ -285,7 +285,12 @@ def init_nav_bars(state_params, request: gr.Request):
             state_params.update({"__max_per_page": 9})
         else:
             state_params.update({"__max_per_page": 18})
-    state_params.update({"__output_list": gallery_util.refresh_output_list(state_params["__max_per_page"], state_params["__cookie"])})
+    if "__cookie" in state_params.keys():
+        state_params.update({"__output_list": gallery_util.refresh_output_list(state_params["__max_per_page"], state_params["__cookie"])})
+    else:
+        state_params.update({"__output_list": gallery_util.refresh_output_list(state_params["__max_per_page"])})
+
+
     #print(f'system_params:{state_params}')
     results = refresh_nav_bars(state_params)
     results += [gr.update(value="enhanced/attached/welcome_m.png")] if state_params["__is_mobile"] else [gr.update()]
