@@ -3,14 +3,21 @@ import json
 import copy
 import re
 import math
+import time
 import gradio as gr
 import modules.config as config
+import modules.sdxl_styles as sdxl_styles
 import modules.advanced_parameters as ads
 import enhanced.topbar as topbar
 import enhanced.gallery as gallery
+import enhanced.token_did as token_did
+import enhanced.version as version
+
 from PIL import Image
 from PIL.PngImagePlugin import PngInfo
-from enhanced.models_info import models_info
+from enhanced.models_info import models_info, models_info_muid, refresh_models_info_from_path, sync_model_info
+from modules.model_loader import load_file_from_url, load_file_from_muid
+
 
 css = '''
 .toolbox {
@@ -75,6 +82,10 @@ css = '''
     padding: 8px;
 }
 
+.note_text {
+    padding: 2px;
+    text-align: center;
+}
 .preset_input textarea {
     width: 120px;
 }
@@ -85,7 +96,7 @@ css = '''
 toolbox_note_preset_title='Save a new preset for the current params and configuration.'
 toolbox_note_regenerate_title='Extract parameters to backfill for regeneration. Please note that some parameters will be modified!'
 toolbox_note_embed_title='Embed parameters into images for easy identification of image sources and communication and learning.'
-toolbox_note_invalid_url='The model in the params and configuration is missing MUID. For usability and transferability, please click "Sync model info" in the right model tab.'
+toolbox_note_missing_muid='The model in the params and configuration is missing MUID. And the system will spend some time calculating the hash of model files and synchronizing information to obtain the muid for usability and transferability.'
 
 def make_infobox_markdown(info):
     bgcolor = '#ddd'
@@ -115,7 +126,7 @@ def toggle_prompt_info(state_params):
     state_params.update({"infobox_state": infobox_state})
     #print(f'[ToolBox] Toggle_image_info: {infobox_state}')
     [choice, selected] = state_params["prompt_info"]
-    prompt_info = gallery.get_images_prompt(choice, selected)
+    prompt_info = gallery.get_images_prompt(choice, selected, state_params["__max_per_page"])
     return gr.update(value=make_infobox_markdown(prompt_info), visible=infobox_state), state_params
 
 
@@ -149,13 +160,13 @@ def toggle_note_box(item, state_params):
     flag = note_box_state[1]
     title_extra = ""
     if note_box_state[2]:
-        title_extra = '\n' + toolbox_note_invalid_url
+        title_extra = '\n' + toolbox_note_missing_muid
     if item == 'delete':
         [choice, selected] = state_params["prompt_info"]
-        info = gallery.get_images_prompt(choice, selected)
+        info = gallery.get_images_prompt(choice, selected, state_params["__max_per_page"])
         return gr.update(value=f'DELETE the image from output directory and logs!', visible=True), gr.update(visible=flag), gr.update(visible=flag), state_params
     if item == 'regen':
-        return gr.update(value=toolbox_note_regenerate_title + title_extra, visible=True), gr.update(visible=flag), gr.update(visible=flag), state_params
+        return gr.update(value=toolbox_note_regenerate_title, visible=True), gr.update(visible=flag), gr.update(visible=flag), state_params
     if item == 'preset':
         return gr.update(value=toolbox_note_preset_title + title_extra, visible=True), gr.update(visible=flag), gr.update(visible=flag), gr.update(visible=flag), state_params
     if item == 'embed':
@@ -188,7 +199,7 @@ filename_regex = re.compile(r'\<div id=\"(.*?)_png\"')
 
 def delete_image(state_params):
     [choice, selected] = state_params["prompt_info"]
-    info = gallery.get_images_prompt(choice, selected)
+    info = gallery.get_images_prompt(choice, selected, state_params["__max_per_page"])
     file_name = info["Filename"]
     output_index = choice.split('/')
     dir_path = os.path.join(config.path_outputs, '20' + output_index[0])
@@ -217,13 +228,14 @@ def delete_image(state_params):
             log_file.write(file_text)
         print(f'[ToolBox] Delete item from log.html: {file_name}')
 
-    log_name = os.path.join(dirname, "log_ads.json")
+    log_name = os.path.join(dir_path, "log_ads.json")
     log_ext = {}
     if os.path.exists(log_name):
         log_ext = {}
         with open(log_name, "r", encoding="utf-8") as log_file:
             log_ext.update(json.load(log_file))
-        log_ext.pop(file_name)
+        if file_name in log_ext.keys():
+            log_ext.pop(file_name)
         with open(log_name, 'w', encoding='utf-8') as log_file:
             json.dump(log_ext, log_file)
 
@@ -232,115 +244,57 @@ def delete_image(state_params):
         os.remove(file_path)
     print(f'[ToolBox] Delete image file: {file_path}')
 
-    image_list_nums = len(gallery.refresh_images_list(output_index[0], True))
+    image_list_nums = len(gallery.refresh_images_catalog(output_index[0], True))
     if image_list_nums<=0:
         os.remove(log_path)
         os.rmdir(dir_path)
-        index = gallery.output_list.index(choice)
-        gallery.refresh_output_list()
-        if index>= len(gallery.output_list):
-            index = len(gallery.output_list) -1
+        index = state_params["__output_list"].index(choice)
+        state_params.update({"__output_list": gallery.refresh_output_list(state_params["__max_per_page"], state_params["__cookie"])})
+        if index>= len(state_params["__output_list"]):
+            index = len(state_params["__output_list"]) -1
             if index<0:
                 index = 0
-        choice = gallery.output_list[index]
-    elif image_list_nums<gallery.max_per_page:
-        if selected>image_list_nums-1:
+        choice = state_params["__output_list"][index]
+    elif image_list_nums < state_params["__max_per_page"]:
+        if selected > image_list_nums-1:
             selected = image_list_nums-1
     else:
-        if image_list_nums % gallery.max_per_page == 0:
+        if image_list_nums % state_params["__max_per_page"] == 0:
             page = int(output_index[1])
-            if page>image_list_nums//gallery.max_per_page:
-                page = image_list_nums//gallery.max_per_page
+            if page > image_list_nums//state_params["__max_per_page"]:
+                page = image_list_nums//state_params["__max_per_page"]
             if page == 1:
                 choice = output_index[0]
             else:
                 choice = output_index[0] + '/' + str(page)
-            gallery.refresh_output_list()
+            state_params.update({"__output_list": gallery.refresh_output_list(state_params["__max_per_page"], state_params["__cookie"])})
 
     state_params.update({"prompt_info":[choice, selected]})
-    images_gallery = gallery.get_images_from_gallery_index(choice)
+    images_gallery = gallery.get_images_from_gallery_index(choice, state_params["__max_per_page"])
     state_params.update({"note_box_state": ['',0,0]})
-    return gr.update(value=images_gallery), gr.update(choices=gallery.output_list, value=choice), gr.update(visible=False), gr.update(visible=False), state_params
+    return gr.update(value=images_gallery), gr.update(choices=state_params["__output_list"], value=choice), gr.update(visible=False), gr.update(visible=False), state_params
 
 
-def reset_default_preset(state_params):
-    state_params["__preset"]= 'default'
-    state_params.update({"note_box_state": ['',0,0]})
-    #print(f'reset_default_preset:{state_params}')
-    return state_params, state_params
-
-
-def reset_preset_params(state_params):
-    state_params.update({"__nav_id_list": topbar.nav_id_list})
-    state_params.update({"__nav_preset_html": topbar.nav_preset_html})
-    #print(f'preset_params_out:{state_params}')
-    return state_params, state_params
-
-
-reset_preset_params_js = '''
-function(system_params) {
-    var preset=system_params["__preset"];
-    var theme=system_params["__theme"];
-    var nav_id_list=system_params["__nav_id_list"];
-    var nav_preset_html = system_params["__nav_preset_html"];
-    update_topbar("top_preset",nav_preset_html)
-    mark_position_for_topbar(nav_id_list,preset,theme);
-    return
-}
-'''
-
-
-def reset_params(state_params):
+def reset_image_params(state_params):
     [choice, selected] = state_params["prompt_info"]
-    info = gallery.get_images_prompt(choice, selected)
-    results = _reset_params(info)
-    print(f'[ToolBox] Reset_params: update {len(info.keys())} params from current image log file.')
-    return results + [gr.update(visible=False)] * 2
-
-def _reset_params(info):
-    print(f'[ToolBox] Get params to reset:{info}')
-    aspect_ratios = info['Resolution'][1:-1].replace(', ', '*')
-    adm_scaler_positive, adm_scaler_negative, adm_scaler_end = [float(f) for f in info['ADM Guidance'][1:-1].split(', ')]
-    refiner_model = None if info['Refiner Model']=='' else info['Refiner Model']
-    
-    if info['Advanced_parameters'] and 'adaptive_cfg' in info['Advanced_parameters'].keys():
-        adaptive_cfg = info['Advanced_parameters']['adaptive_cfg']
-    else:
-        adaptive_cfg = ads.default['adaptive_cfg']
-    if info['Advanced_parameters'] and 'overwrite_step' in info['Advanced_parameters'].keys():
-        overwrite_step = info['Advanced_parameters']['overwrite_step']
-    else:
-        overwrite_step = ads.default['overwrite_step']
-    if info['Advanced_parameters'] and 'overwrite_switch' in info['Advanced_parameters'].keys():
-        overwrite_switch = info['Advanced_parameters']['overwrite_switch']
-    else:
-        overwrite_switch = ads.default['overwrite_switch']
-
-    lora_results = []
-    for k in range(0,5):
-        lora_results += [gr.update(value='None'), gr.update(value=1.0)]
-    for key in info:
+    metainfo = gallery.get_images_prompt(choice, selected, state_params["__max_per_page"])
+    metadata = copy.deepcopy(metainfo)
+    metadata['Refiner Model'] = None if metainfo['Refiner Model']=='' else metainfo['Refiner Model']
+    loras = [['None', 1.0], ['None', 1.0], ['None', 1.0], ['None', 1.0], ['None', 1.0]]
+    for key in metainfo:
         i=0
         if key.startswith('LoRA ['):
-            lora_model = key[6:-9]
-            lora_weight = float(info[key])
-            lora_results.insert(i, gr.update(value=lora_model))
-            lora_results.insert(i+1, gr.update(value=lora_weight))
-            i += 2
-    lora_results = lora_results[:10]
-    styles = [f[1:-1] for f in info['Styles'][1:-1].split(', ')]
-    results = []
-    results += [gr.update(value=info['Prompt']), gr.update(value=info['Negative Prompt']), gr.update(value=copy.deepcopy(styles)), \
-            gr.update(value=info['Performance']),  gr.update(value=config.add_ratio(aspect_ratios)), gr.update(value=float(info['Sharpness'])), \
-            gr.update(value=float(info['Guidance Scale'])), gr.update(value=info['Base Model']), gr.update(value=refiner_model), \
-            gr.update(value=float(info['Refiner Switch'])), gr.update(value=info['Sampler']), gr.update(value=info['Scheduler']), \
-            gr.update(value=adaptive_cfg), gr.update(value=overwrite_step), gr.update(value=overwrite_switch)]
-    results += lora_results
-    results += [gr.update(value=adm_scaler_positive), gr.update(value=adm_scaler_negative), gr.update(value=adm_scaler_end), gr.update(value=int(info['Seed']))]
-    return results
+            loras.insert(i, [key[6:-8], float(metainfo[key])])
+    loras = loras[:5]
+    metadata.update({"loras": loras})
+    metadata.update({"task_from": f'regeneration:{metadata["Filename"]}'})
+    results = topbar.reset_params(metadata)
+    state_params.update({"note_box_state": ['',0,0]})
+    print(f'[ToolBox] Reset_params: update {len(metainfo.keys())} params from current image log file.')
+    return results + [gr.update(visible=False)] * 2 + [state_params]
 
 
-def save_preset(name, state_params, prompt, negative_prompt, style_selections, performance_selection, aspect_ratios_selection, sharpness, guidance_scale, base_model, refiner_model, refiner_switch, sampler_name, scheduler_name, adaptive_cfg, overwrite_step, overwrite_switch, lora_model1, lora_weight1, lora_model2, lora_weight2, lora_model3, lora_weight3, lora_model4, lora_weight4, lora_model5, lora_weight5):
+def save_preset(name, state_params, prompt, negative_prompt, style_selections, performance_selection, aspect_ratios_selection, sharpness, guidance_scale, base_model, refiner_model, refiner_switch, sampler_name, scheduler_name, adaptive_cfg, overwrite_step, overwrite_switch, inpaint_engine, lora_model1, lora_weight1, lora_model2, lora_weight2, lora_model3, lora_weight3, lora_model4, lora_weight4, lora_model5, lora_weight5, adm_scaler_positive, adm_scaler_negative, adm_scaler_end, seed_random, image_seed):
 
     if name is not None and name != '':
         preset = {}
@@ -357,9 +311,22 @@ def save_preset(name, state_params, prompt, negative_prompt, style_selections, p
         preset["default_prompt_negative"] = negative_prompt
         preset["default_styles"] = style_selections
         preset["default_aspect_ratio"] = aspect_ratios_selection.split(' ')[0].replace(u'\u00d7','*')
-        preset["default_cfg_tsnr"]=adaptive_cfg
-        preset["default_overwrite_step"]=overwrite_step
-        preset["default_overwrite_switch"]=overwrite_switch
+        if ads.default["adm_scaler_positive"] != adm_scaler_positive:
+            preset["default_adm_scaler_positive"] = adm_scaler_positive
+        if ads.default["adm_scaler_negative"] != adm_scaler_negative:
+            preset["default_adm_scaler_negative"] = adm_scaler_negative
+        if ads.default["adm_scaler_end"] != adm_scaler_end:
+            preset["default_adm_scaler_end"] = adm_scaler_end
+        if ads.default["adaptive_cfg"] != adaptive_cfg:
+            preset["default_cfg_tsnr"] = adaptive_cfg
+        if ads.default["overwrite_step"] != overwrite_step:
+            preset["default_overwrite_step"] = overwrite_step
+        if ads.default["overwrite_switch"] != overwrite_switch:
+            preset["default_overwrite_switch"] = overwrite_switch
+        if ads.default["inpaint_engine"] != inpaint_engine:
+            preset["default_inpaint_engine"] = inpaint_engine
+        if not seed_random:
+            preset["default_image_seed"] = image_seed
 
         def get_muid_link(k):
             muid = models_info[k]['muid']
@@ -392,7 +359,13 @@ def save_preset(name, state_params, prompt, negative_prompt, style_selections, p
             preset["lora_downloads"].update({lora_model4: get_muid_link("loras/"+lora_model4)})
         if lora_model5 and lora_model5 != 'None':
             preset["lora_downloads"].update({lora_model5: get_muid_link("loras/"+lora_model5)})
-
+        
+        m_dict = {}
+        for key in style_selections:
+            if key!='Fooocus V2':
+                m_dict.update({key: sdxl_styles.styles[key]})
+        if len(m_dict.keys())>0:
+            preset["styles_definition"] = m_dict
 
         #print(f'preset:{preset}')
         save_path = 'presets/' + name + '.json'
@@ -400,43 +373,89 @@ def save_preset(name, state_params, prompt, negative_prompt, style_selections, p
             json.dump(preset, json_file, indent=4)
 
         state_params.update({"__preset": name})
-        print(f'[ToolBox] Saved the current params and config to {save_path}.')
+        print(f'[ToolBox] Saved the current params and reset to {save_path}.')
     state_params.update({"note_box_state": ['',0,0]})
-    topbar.make_html()
-    return [gr.update(visible=False)] * 4 + [state_params]
+    results = [gr.update(visible=False)] * 3 + [state_params]
+    results += topbar.refresh_nav_bars(state_params)
+    return results
 
 
 def embed_params(state_params):
+    refresh_models_info_from_path()
+    sync_model_info([])
     [choice, selected] = state_params["prompt_info"]
-    info = gallery.get_images_prompt(choice, selected)
+    info = gallery.get_images_prompt(choice, selected, state_params["__max_per_page"])
     #print(f'info:{info}')
     filename = info['Filename']
     file_path = os.path.join(os.path.join(config.path_outputs, '20' + choice.split('/')[0]), filename)
     img = Image.open(file_path)
-    metadata = PngInfo()
-    for x in info.keys():
-        metadata.add_text(x, json.dumps(info[x]), True)
-
     embed_dirs = os.path.join(config.path_outputs, 'embed')
     if not os.path.exists(embed_dirs):
         os.mkdir(embed_dirs)
     embed_file = os.path.join(embed_dirs, filename)
-    img.save(embed_file, pnginfo=metadata)
-    print(f'[ToolBox] Embed_params: embed {len(info.keys())} params to image and save to {embed_file}.')
-    return [gr.update(visible=False)] * 2 + [state_params]
+def get_embed_metadata(info, extra=None):
+    metadata = {}
+    for x in info.keys():
+        if x != 'Filename':
+            metadata.update({x: info[x]})
 
-def extract_parameters(img_path, state_params):
+    # the models(checkpoint, lora, embeddings) and styles referenced by the image
+    resource_id = lambda x:f'HASH:{models_info[x]["hash"]}' if not models_info[x]['muid'] else f'MUID:{models_info[x]["muid"]}'
+    m_dict = {info["Base Model"]: resource_id("checkpoints/" + info["Base Model"])}
+    if info['Refiner Model'] and info['Refiner Model'] != 'None':
+        m_dict.update({info["Refiner Model"]: resource_id("checkpoints/" + info["Refiner Model"])})
+    metadata.update({'checkpoint_downloads': m_dict}) 
+    
+    m_dict = {}
+    for key in info:
+        if key.startswith('LoRA ['):
+            m_dict.update({key[6:-8]: resource_id("loras/" + key[6:-8])})
+    if len(m_dict.keys())>0:
+        metadata.update({'lora_downloads': m_dict})
+
+    embeddings = topbar.embeddings_model_split(info["Prompt"], info["Negative Prompt"])
+    m_dict = {}
+    for key in embeddings:
+        m_dict.update({key[11:]: resource_id(key)})
+    if len(m_dict.keys())>0:
+        metadata.update({'embeddings_downloads': m_dict})
+
+    styles_name = [f[1:-1] for f in info['Styles'][1:-1].split(', ')]
+    for key in styles_name:
+        if key!='Fooocus V2':
+            m_dict.update({key: sdxl_styles.styles[key]})
+    if len(m_dict.keys())>0:
+        metadata.update({'styles_definition': m_dict})
+    metadata.update({'created_by': token_did.DID})
+    metadata.update({'created_timestamp': time.time()})
+    metadata.update({'software': f'{version.branch}_{version.get_simplesdxl_ver()}'})
+    metadata.update({'version': 'v1.0'})
+    if "Version" in metadata.keys():
+        metadata.pop("Version")
+
+    return metadata
+
+
+def extract_reset_image_params(img_path):
     img = Image.open(img_path)
     metadata = {}
     if hasattr(img,'text'):
         for k in img.text:
             metadata.update({k: json.loads(img.text[k])})
-    state_params.update({'image_params': metadata})
-    return state_params
-
-
-def reset_params_from_image(state_params):
-    info = state_params['image_params']
-    results = _reset_params(info)   
-    print(f'[ToolBox] Reset_params_from_image: update {len(info.keys())} params from input image.')
+    if "Comment" not in metadata.keys():
+        print(f'[ToolBox] Reset_params_from_image: it\'s not the embedded parameter image. \nmetadata:{metadata}')
+        return [gr.update()] * 31
+    print(f'[ToolBox] Extraction successful and ready to reset: {metadata}') 
+    refresh_models_info_from_path()
+    sync_model_info([])
+    metadata["Comment"].update({"task_from": f'embed_image:{img_path}'})
+    results = topbar.reset_params(topbar.check_prepare_for_reset(metadata["Comment"]))   
+    print(f'[ToolBox] Reset_params_from_image: update {len(metadata["Comment"].keys())} params from input image.')
     return results
+
+extract_reset_image_params_js = '''
+function() {
+refresh_style_localization()
+}
+'''
+

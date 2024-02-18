@@ -18,9 +18,16 @@ always_save_keys = []
 visited_keys = []
 
 try:
+    with open(os.path.abspath(f'./presets/default.json'), "r", encoding="utf-8") as json_file:
+        config_dict.update(json.load(json_file))
+except Exception as e:
+    print(f'Load default preset failed.')
+    print(e)
+
+try:
     if os.path.exists(config_path):
         with open(config_path, "r", encoding="utf-8") as json_file:
-            config_dict = json.load(json_file)
+            config_dict.update(json.load(json_file))
             always_save_keys = list(config_dict.keys())
     else:
         fooocus_config_path =  os.path.abspath("../Fooocus/config.txt")
@@ -133,7 +140,7 @@ path_inpaint = get_dir_or_set_default('path_inpaint', '../models/inpaint/')
 path_controlnet = get_dir_or_set_default('path_controlnet', '../models/controlnet/')
 path_clip_vision = get_dir_or_set_default('path_clip_vision', '../models/clip_vision/')
 path_fooocus_expansion = get_dir_or_set_default('path_fooocus_expansion', '../models/prompt_expansion/fooocus_expansion')
-path_translator = get_dir_or_set_default('path_translator','../models/translator/')
+path_llms = get_dir_or_set_default('path_llms','../models/llms/')
 path_outputs = get_dir_or_set_default('path_outputs', '../outputs/')
 
 
@@ -162,8 +169,13 @@ def get_config_item_or_set_default(key, default_value, validator, disable_empty_
 
 default_base_model_name = get_config_item_or_set_default(
     key='default_model',
-    default_value='juggernautXL_version6Rundiffusion.safetensors',
+    default_value='model.safetensors',
     validator=lambda x: isinstance(x, str)
+)
+previous_default_models = get_config_item_or_set_default(
+    key='previous_default_models',
+    default_value=[],
+    validator=lambda x: isinstance(x, list) and all(isinstance(k, str) for k in x)
 )
 default_refiner_model_name = get_config_item_or_set_default(
     key='default_refiner',
@@ -172,15 +184,15 @@ default_refiner_model_name = get_config_item_or_set_default(
 )
 default_refiner_switch = get_config_item_or_set_default(
     key='default_refiner_switch',
-    default_value=0.5,
+    default_value=0.8,
     validator=lambda x: isinstance(x, numbers.Number) and 0 <= x <= 1
 )
 default_loras = get_config_item_or_set_default(
     key='default_loras',
     default_value=[
         [
-            "sd_xl_offset_example-lora_1.0.safetensors",
-            0.1
+            "None",
+            1.0
         ],
         [
             "None",
@@ -203,7 +215,7 @@ default_loras = get_config_item_or_set_default(
 )
 default_cfg_scale = get_config_item_or_set_default(
     key='default_cfg_scale',
-    default_value=4.0,
+    default_value=7.0,
     validator=lambda x: isinstance(x, numbers.Number)
 )
 default_sample_sharpness = get_config_item_or_set_default(
@@ -264,16 +276,12 @@ default_image_number = get_config_item_or_set_default(
 )
 checkpoint_downloads = get_config_item_or_set_default(
     key='checkpoint_downloads',
-    default_value={
-        "juggernautXL_version6Rundiffusion.safetensors": "https://huggingface.co/lllyasviel/fav_models/resolve/main/fav/juggernautXL_version6Rundiffusion.safetensors"
-    },
+    default_value={},
     validator=lambda x: isinstance(x, dict) and all(isinstance(k, str) and isinstance(v, str) for k, v in x.items())
 )
 lora_downloads = get_config_item_or_set_default(
     key='lora_downloads',
-    default_value={
-        "sd_xl_offset_example-lora_1.0.safetensors": "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_offset_example-lora_1.0.safetensors"
-    },
+    default_value={},
     validator=lambda x: isinstance(x, dict) and all(isinstance(k, str) and isinstance(v, str) for k, v in x.items())
 )
 embeddings_downloads = get_config_item_or_set_default(
@@ -284,11 +292,11 @@ embeddings_downloads = get_config_item_or_set_default(
 available_aspect_ratios = get_config_item_or_set_default(
     key='available_aspect_ratios',
     default_value=[
-        '768*1366', '896*1152', '915*1144', '1024*1024', '1152*896', '1182*886',
-        '1254*836', '1366*768', '1564*670', '704*1408', '704*1344', '768*1280',
-        '832*1216', '832*1152', '896*1088', '960*1088', '960*1024', '1024*960',
-        '1088*960', '1088*896', '1152*832', '1216*832', '1280*768', '1344*768',
-        '1344*704', '1408*704', '1472*704', '1536*640', '1600*640', '1664*576'
+        '704*1408', '704*1344', '768*1366', '768*1280', '832*1216', '832*1152',
+        '896*1152', '896*1088', '915*1144', '960*1024', '960*1088', '1024*1024',
+        '1024*960', '1088*960', '1088*896', '1152*896', '1152*832', '1182*886',
+        '1216*832', '1254*836', '1280*768', '1344*768', '1344*704', '1366*768',
+        '1408*704', '1472*704', '1536*640', '1564*670', '1600*640', '1664*576'
     ],
     validator=lambda x: isinstance(x, list) and all('*' in v for v in x) and len(x) > 1
 )
@@ -317,6 +325,13 @@ default_overwrite_switch = get_config_item_or_set_default(
     default_value=ads.default['overwrite_switch'],
     validator=lambda x: isinstance(x, int)
 )
+
+default_inpaint_mask_upload_checkbox = get_config_item_or_set_default(
+    key='default_inpaint_mask_upload_checkbox',
+    default_value=ads.default['inpaint_mask_upload_checkbox'],
+    validator=lambda x: isinstance(x, bool)
+)
+
 example_inpaint_prompts = get_config_item_or_set_default(
     key='example_inpaint_prompts',
     default_value=[
@@ -326,6 +341,24 @@ example_inpaint_prompts = get_config_item_or_set_default(
 )
 
 example_inpaint_prompts = [[x] for x in example_inpaint_prompts]
+
+default_inpaint_mask_model = get_config_item_or_set_default(
+    key='default_inpaint_mask_model',
+    default_value='isnet-general-use',
+    validator=lambda x: x in modules.flags.inpaint_mask_models
+)
+
+default_inpaint_mask_cloth_category = get_config_item_or_set_default(
+    key='default_inpaint_mask_cloth_category',
+    default_value='full',
+    validator=lambda x: x in modules.flags.inpaint_mask_cloth_category
+)
+
+default_inpaint_mask_sam_model = get_config_item_or_set_default(
+    key='default_inpaint_mask_sam_model',
+    default_value='sam_vit_b_01ec64',
+    validator=lambda x: x in modules.flags.inpaint_mask_sam_model
+)
 
 config_dict["default_loras"] = default_loras = default_loras[:5] + [['None', 1.0] for _ in range(5 - len(default_loras))]
 
@@ -366,6 +399,7 @@ def add_ratio(x):
     a, b = x.replace('*', ' ').split(' ')[:2]
     a, b = int(a), int(b)
     g = math.gcd(a, b)
+    c, d = 1, 1
     if g<8:
         if (a, b) == (768, 1366):
             c, d = 9, 16
@@ -533,4 +567,3 @@ def downloading_upscale_model():
 
 
 update_all_model_names()
-

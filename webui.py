@@ -17,6 +17,7 @@ import modules.meta_parser
 import args_manager
 import copy
 
+from PIL import Image
 from modules.sdxl_styles import legal_style_names
 from modules.private_logger import get_current_html_path
 from modules.ui_gradio_extensions import reload_javascript
@@ -28,37 +29,18 @@ import enhanced.toolbox  as toolbox
 import enhanced.translator  as translator
 import enhanced.enhanced_parameters as enhanced_parameters
 import enhanced.version as version
+import enhanced.location as location
 from enhanced.models_info import models_info, sync_model_info_click 
 
 
-from efficient_sam.build_efficient_sam import build_efficient_sam_vitt, build_efficient_sam_vits
-from torchvision import transforms
-import numpy as np
-import torch
-import PIL
-global esam_model
-esam_model = None
-def sample_prompt_pts(mask, h_resol=128, w_resol=128, max_pts=128, K = 20):
-    h_step = max(mask.shape[0] // h_resol, 1)
-    w_step = max(mask.shape[1] // w_resol, 1)
-    valid_pts = []
-    for i in range(0, mask.shape[0], h_step):
-        for j in range(0, mask.shape[1], w_step):
-            if mask[i][j]: valid_pts.append((i, j))
-    if len(valid_pts) > max_pts:
-        valid_pts = np.array(valid_pts).reshape(-1, 2)
-        keep = set([np.random.randint(0, len(valid_pts))])
-        while len(keep) < max_pts:
-            sel = []
-            while len(sel) < K:
-                i = np.random.randint(0, len(valid_pts))
-                if i in keep: continue
-                sel.append(i)
-            sel_dists = np.linalg.norm(valid_pts[np.array(sel),None,:] - valid_pts[None,np.array(list(keep)),:],axis=2).min(axis=1)
-            j = sel[np.argmax(sel_dists)]
-            keep.add(j)
-        valid_pts = valid_pts[list(keep),:]
-    return valid_pts[:,[1,0]]
+def tokeninfo(request: gr.Request):
+    try:
+        cookie = request.headers['cookie']
+        filename = cookie.split(';')[0]
+        return filename
+    except Exception as e:
+        # logging.error("An error occurred: %s", e, exc_info=True)
+        raise e  # Re-raise the exception to handle it as usual (or you can return an error message)
 
 def generate_clicked(*args):
     import ldm_patched.modules.model_management as model_management
@@ -110,7 +92,6 @@ def generate_clicked(*args):
 
     execution_time = time.perf_counter() - execution_start_time
     print(f'Total time: {execution_time:.2f} seconds')
-    gallery_util.refresh_output_list()
     return
 
 
@@ -126,22 +107,33 @@ shared.gradio_root = gr.Blocks(
     css=modules.html.css + topbar.css + toolbox.css).queue()
 
 with shared.gradio_root:
+    state_topbar = gr.State({})
+   
     with gr.Row():
         with gr.Column(scale=2):
             with gr.Group():
-                with gr.Row(variant='compact'):
-                    topbar_html = gr.HTML(value=topbar.make_html(), visible=True, elem_id='top_nav', elem_classes='top_nav')
-                    state_topbar = gr.State({})
                 with gr.Row():
-                    progress_window = grh.Image(label='Preview', show_label=True, visible=False, height=520, elem_id='preview_generating',
-                                            elem_classes=['main_view'])
+                    bar_title = gr.Markdown('<b>Presets:</b>', visible=False, elem_id='bar_title', elem_classes='bar_title')
+                    bar0_button = gr.Button(value='default', size='sm', visible=True, min_width=70, elem_id='bar0', elem_classes='bar_button')
+                    bar1_button = gr.Button(value='', size='sm', visible=True, min_width=70, elem_id='bar1', elem_classes='bar_button')
+                    bar2_button = gr.Button(value='', size='sm', visible=True, min_width=70, elem_id='bar2', elem_classes='bar_button')
+                    bar3_button = gr.Button(value='', size='sm', visible=True, min_width=70, elem_id='bar3', elem_classes='bar_button')
+                    bar4_button = gr.Button(value='', size='sm', visible=True, min_width=70, elem_id='bar4', elem_classes='bar_button')
+                    bar5_button = gr.Button(value='', size='sm', visible=True, min_width=70, elem_id='bar5', elem_classes='bar_button')
+                    bar6_button = gr.Button(value='', size='sm', visible=True, min_width=70, elem_id='bar6', elem_classes='bar_button')
+                    bar7_button = gr.Button(value='', size='sm', visible=True, min_width=70, elem_id='bar7', elem_classes='bar_button')
+                    bar8_button = gr.Button(value='', size='sm', visible=True, min_width=70, elem_id='bar8', elem_classes='bar_button')
+                with gr.Row():
+                    progress_window = grh.Image(label='Preview', show_label=True, visible=True, height=768, elem_id='preview_generating',  elem_classes=['main_view'])
+
+                    # progress_window = grh.Image(label='Preview', show_label=True, visible=True, height=768, elem_id='preview_generating',  elem_classes=['main_view'], value="enhanced/attached/welcome.png")
                     progress_gallery = gr.Gallery(label='Finished Images', show_label=True, object_fit='contain', elem_id='finished_gallery',
                                               height=520, visible=False, elem_classes=['main_view', 'image_gallery'])
                 progress_html = gr.HTML(value=modules.html.make_progress_html(32, 'Progress 32%'), visible=False,
                                     elem_id='progress-bar', elem_classes='progress-bar')
-                gallery = gr.Gallery(label='Gallery', show_label=True, object_fit='contain', visible=True, height=520,
+                gallery = gr.Gallery(label='Gallery', show_label=True, object_fit='contain', visible=False, height=768,
                                  elem_classes=['resizable_area', 'main_view', 'final_gallery', 'image_gallery'],
-                                 elem_id='final_gallery', preview=True)
+                                 elem_id='final_gallery', preview=True )
                 prompt_info_box = gr.Markdown(toolbox.make_infobox_markdown(None), visible=False, elem_id='infobox', elem_classes='infobox')
                 with gr.Group(visible=False, elem_classes='toolbox_note') as params_note_box:
                     params_note_info = gr.Markdown(elem_classes='note_info')
@@ -150,10 +142,8 @@ with shared.gradio_root:
                     params_note_regen_button = gr.Button(value='Enter', visible=False)
                     params_note_preset_button = gr.Button(value='Enter', visible=False)
                     params_note_embed_button = gr.Button(value='Enter', visible=False)
-                with gr.Accordion("Finished Images Index:", open=False, visible=len(gallery_util.output_list)>0) as index_radio:
-                    gallery_index = gr.Radio(gallery_util.output_list, label="Gallery_Index", value=None, show_label=False)
-                    
-                    gallery_index.select(gallery_util.select_index, inputs=[gallery_index, state_topbar], outputs=[gallery, progress_gallery, prompt_info_box, params_note_box, state_topbar], show_progress=False)
+                with gr.Accordion("Finished Images Index:", open=False, visible=False) as index_radio:
+                    gallery_index = gr.Radio(choices=None, label="Gallery_Index", value=None, show_label=False)
                     gallery_index.change(gallery_util.images_list_update, inputs=[gallery_index, state_topbar], outputs=[gallery, index_radio, state_topbar], show_progress=False)
             with gr.Row(elem_classes='type_row'):
                 with gr.Column(scale=17):
@@ -189,14 +179,14 @@ with shared.gradio_root:
             with gr.Row(elem_classes='advanced_check_row'):
                 input_image_checkbox = gr.Checkbox(label='Input Image', value=False, container=False, elem_classes='min_check')
                 advanced_checkbox = gr.Checkbox(label='Advanced+', value=modules.config.default_advanced_checkbox, container=False, elem_classes='min_check')
-                image_tools_checkbox = gr.Checkbox(label='Params Tools', value=False, container=False, elem_classes='min_check')
+                image_tools_checkbox = gr.Checkbox(label='ParamsTools', value=False, container=False, elem_classes='min_check')
             with gr.Group(visible=False, elem_classes='toolbox') as image_toolbox:
                 image_tools_box_title = gr.Markdown('<b>ToolBox</b>', visible=True)
-                prompt_info_button = gr.Button(value='ViewInfo', size='sm', visible=True)
-                prompt_delete_button = gr.Button(value='DeleteImage', size='sm', visible=True)
+                prompt_info_button = gr.Button(value='ViewMeta', size='sm', visible=True)
                 prompt_regen_button = gr.Button(value='ReGenerate', size='sm', visible=True)
                 prompt_preset_button = gr.Button(value='SavePreset', size='sm', visible=True)
-                prompt_embed_button = gr.Button(value='EmbedInfo', size='sm', visible=True)
+                prompt_embed_button = gr.Button(value='EmbedMeta', size='sm', visible=True)
+                prompt_delete_button = gr.Button(value='DeleteImage', size='sm', visible=True)
                 image_tools_checkbox.change(toolbox.toggle_toolbox, inputs=[image_tools_checkbox, state_topbar], outputs=[image_toolbox, prompt_info_box, params_note_info, params_note_input_name, params_note_regen_button, params_note_preset_button, state_topbar], queue=False, show_progress=False)
                 prompt_info_button.click(toolbox.toggle_prompt_info, inputs=state_topbar, outputs=[prompt_info_box, state_topbar], show_progress=False)
                 
@@ -254,109 +244,71 @@ with shared.gradio_root:
                                            queue=False, show_progress=False)
                     with gr.TabItem(label='Inpaint or Outpaint') as inpaint_tab:
                         with gr.Row():
-                            inpaint_input_image = grh.Image(label='Drag inpaint or outpaint image to here', source='upload', type='numpy', tool='sketch', height=500, brush_color="#FFFFFF", elem_id='inpaint_canvas')
-                            
-                            inpaint_mask_image = grh.Image(label='Mask Upload', source='upload', type='numpy', height=500, visible=False)
-                        with gr.Row():
-                            inpaint_input_mask_vis = grh.Image(label='Mask Overlayed', source='upload', type='numpy', tool=None, height=500, brush_color="#FFFFFF", elem_id='inpaint_canvas_mask_vis', visible=True, interactive=False)
-                            
-                            inpaint_input_mask = grh.Image(label='Mask (selection in white)', source='upload', image_mode='L', type='numpy', tool=None, height=500, brush_color="#FFFFFF", elem_id='inpaint_canvas_mask', visible=False, interactive=False)
+                            with gr.Column():
+                                inpaint_input_image = grh.Image(label='Drag inpaint or outpaint image to here', source='upload', type='numpy', tool='sketch', height=500, brush_color="#FFFFFF", elem_id='inpaint_canvas')
+                                inpaint_mode = gr.Dropdown(choices=modules.flags.inpaint_options, value=modules.flags.inpaint_option_default, label='Method')
+                                inpaint_additional_prompt = gr.Textbox(placeholder="Describe what you want to inpaint.", elem_id='inpaint_additional_prompt', label='Inpaint Additional Prompt', visible=False)
+                                outpaint_selections = gr.CheckboxGroup(choices=['Left', 'Right', 'Top', 'Bottom'], value=[], label='Outpaint Direction')
+                                example_inpaint_prompts = gr.Dataset(samples=modules.config.example_inpaint_prompts,
+                                                                     label='Additional Prompt Quick List',
+                                                                     components=[inpaint_additional_prompt],
+                                                                     visible=False)
+                                gr.HTML('* Powered by Fooocus Inpaint Engine <a href="https://github.com/lllyasviel/Fooocus/discussions/414" target="_blank">\U0001F4D4 Document</a>')
+                                example_inpaint_prompts.click(lambda x: x[0], inputs=example_inpaint_prompts, outputs=inpaint_additional_prompt, show_progress=False, queue=False)
 
-                        with gr.Row():
-                            with gr.Column(scale=1):
-                                sam_segment = gr.Button("SAM-Mask", elem_id='inpaint_sam_segment_button', visible=True)
-                                clear_segment = gr.Button("Clear-Mask", elem_id='inpaint_clear_segment_button', visible=True)
-                                invert_segment = gr.Button("Invert-Mask", elem_id='inpaint_invert_segment_button', visible=True)
-                                # upload_segment = gr.UploadButton("Upload Mask (selection in non-black)", elem_id='inpaint_upload_segment_button', visible=True, file_count="single", file_types=["image"])
+                            with gr.Column(visible=True) as inpaint_mask_generation_col:
+                                inpaint_mask_image = grh.Image(label='Mask Upload', source='upload', type='numpy',
+                                                               height=500)
+                                inpaint_mask_model = gr.Dropdown(label='Mask generation model',
+                                                                 choices=flags.inpaint_mask_models,
+                                                                 value=modules.config.default_inpaint_mask_model)
+                                inpaint_mask_cloth_category = gr.Dropdown(label='Cloth category',
+                                                             choices=flags.inpaint_mask_cloth_category,
+                                                             value=modules.config.default_inpaint_mask_cloth_category,
+                                                             visible=False)
+                                inpaint_mask_sam_prompt_text = gr.Textbox(label='Segmentation prompt', value='', visible=False)
+                                with gr.Accordion("Advanced options", visible=False, open=False) as inpaint_mask_advanced_options:
+                                    inpaint_mask_sam_model = gr.Dropdown(label='SAM model', choices=flags.inpaint_mask_sam_model, value=modules.config.default_inpaint_mask_sam_model)
+                                    inpaint_mask_sam_quant = gr.Checkbox(label='Quantization', value=False)
+                                    inpaint_mask_box_threshold = gr.Slider(label="Box Threshold", minimum=0.0, maximum=1.0, value=0.3, step=0.05)
+                                    inpaint_mask_text_threshold = gr.Slider(label="Text Threshold", minimum=0.0, maximum=1.0, value=0.25, step=0.05)
+                                generate_mask_button = gr.Button(value='Generate mask from image')
 
-                            inpaint_additional_prompt = gr.Textbox(placeholder="Describe what you want to inpaint.", elem_id='inpaint_additional_prompt', label='Inpaint Additional Prompt', visible=False)
-                            outpaint_selections = gr.CheckboxGroup(choices=['Left', 'Right', 'Top', 'Bottom'], value=[], label='Outpaint Direction')
-                            inpaint_mode = gr.Dropdown(choices=modules.flags.inpaint_options, value=modules.flags.inpaint_option_default, label='Method')
 
-                        example_inpaint_prompts = gr.Dataset(samples=modules.config.example_inpaint_prompts, label='Additional Prompt Quick List', components=[inpaint_additional_prompt], visible=False)
-                        def sam_mask_button_clicked(inp):
-                            if inp is None: return None, None
-                            global esam_model
-                            if esam_model is None:
-                                gr.Info('loading SAM model')
-                                esam_model = build_efficient_sam_vitt("efficient_sam/weights/efficient_sam_vitt.pt")
-                            image = inp['image']
-                            mask = inp['mask']
-                            if mask.sum() == 0:
-                                gr.Warning('SAM needs initial mask as prompt')
-                                return None, None
-                            with torch.no_grad():
-                                sample_image_tensor = transforms.ToTensor()(image)
-                                mask = (mask[:,:,0] > 0)
-                                pts = sample_prompt_pts(mask)
-                                input_points = torch.reshape(torch.tensor(pts), [1, 1, -1, 2])
-                                input_labels = torch.reshape(torch.tensor([1]*pts.shape[0]), [1, 1, -1])
-                                predicted_logits, predicted_iou = esam_model(sample_image_tensor[None, ...], input_points, input_labels,)
-                                predicted_logits = predicted_logits[0, 0]
-                                predicted_iou = predicted_iou[0, 0]
-                                masks = [torch.ge(predicted_logits[idx, :, :], 0).cpu().detach().numpy().astype(np.uint8) for idx in range(len(predicted_iou))]
-                                gen_mask = masks[np.argmax(predicted_iou)]
-                            rgba_mask = (255*(1-gen_mask*0.3)).astype(np.uint8)[:,:,None]
-                            combined = np.concatenate([image, rgba_mask], axis=2)
-                            return combined, gen_mask
-                        def invert_mask_button_clicked(inp, cur_mask):
-                            if inp is not None:
-                                image = inp['image']
-                                gen_mask = (1-cur_mask/255.).astype(np.uint8)
-                                rgba_mask = (255*(1-gen_mask*0.3)).astype(np.uint8)[:,:,None]
-                                combined = np.concatenate([image, rgba_mask], axis=2)
-                            else:
-                                gen_mask = None
-                                combined = None
-                            return combined, gen_mask
-                        def clear_mask_button_clicked(inp, cur_mask):
-                            if inp is not None:
-                                image = inp['image']
-                                gen_mask = np.zeros_like(image)[:,:,0]
-                                gen_mask.fill(0)
-                                combined = image
-                            else:
-                                gen_mask = None
-                                combined = None
-                            return combined, gen_mask
+                                def generate_mask(image, mask_model, cloth_category, sam_prompt_text, sam_model, sam_quant, box_threshold, text_threshold):
+                                    from extras.inpaint_mask import generate_mask_from_image
 
-                        def upload_mask_button_clicked(upload_file, inp):
-                            if upload_file is None:
-                                return None, None
-                            if inp is None:
-                                gr.Info('Missing input image')
-                                return None, None
-                            image = inp['image']
-                            cur_mask = PIL.Image.open(upload_file.name)
-                            if cur_mask.mode == 'RGBA':
-                                cur_mask = cur_mask.getchannel('A').convert('L')
-                            else:
-                                cur_mask = cur_mask.convert('L')
-                            cur_mask = transforms.Resize(image.shape[:2],antialias=True)(transforms.ToTensor()(cur_mask)).numpy()[0]
-                            cur_mask = (cur_mask > 0)
-                            gen_mask = cur_mask.astype(np.uint8)
-                            rgba_mask = (255*(1-gen_mask*0.3)).astype(np.uint8)[:,:,None]
-                            combined = np.concatenate([image, rgba_mask], axis=2)
-                            return combined, gen_mask*255
-                        sam_segment.click(fn=sam_mask_button_clicked, inputs=[inpaint_input_image], outputs=[inpaint_input_mask_vis, inpaint_input_mask])
-                        clear_segment.click(fn=clear_mask_button_clicked, inputs=[inpaint_input_image, inpaint_input_mask], outputs=[inpaint_input_mask_vis, inpaint_input_mask])
-                        invert_segment.click(fn=invert_mask_button_clicked, inputs=[inpaint_input_image, inpaint_input_mask], outputs=[inpaint_input_mask_vis, inpaint_input_mask])
-                        # upload_segment.upload(fn=upload_mask_button_clicked, inputs=[upload_segment, inpaint_input_image], outputs=[inpaint_input_mask_vis, inpaint_input_mask])
-                        
-                        
-                        gr.HTML('* Powered by Fooocus Inpaint Engine <a href="https://github.com/lllyasviel/Fooocus/discussions/414" target="_blank">\U0001F4D4 Document</a>')
-                        example_inpaint_prompts.click(lambda x: x[0], inputs=example_inpaint_prompts, outputs=inpaint_additional_prompt, show_progress=False, queue=False)
+                                    extras = {}
+                                    if mask_model == 'u2net_cloth_seg':
+                                        extras['cloth_category'] = cloth_category
+                                    elif mask_model == 'sam':
+                                        extras['sam_prompt_text'] = sam_prompt_text
+                                        extras['sam_model'] = sam_model
+                                        extras['sam_quant'] = sam_quant
+                                        extras['box_threshold'] = box_threshold
+                                        extras['text_threshold'] = text_threshold
+
+                                    return generate_mask_from_image(image, mask_model, extras)
+
+                            inpaint_mask_model.change(lambda x: [gr.update(visible=x == 'u2net_cloth_seg'), gr.update(visible=x == 'sam'), gr.update(visible=x == 'sam')],
+                                                      inputs=inpaint_mask_model,
+                                                      outputs=[inpaint_mask_cloth_category, inpaint_mask_sam_prompt_text, inpaint_mask_advanced_options],
+                                                      queue=False, show_progress=False)
+
                     with gr.TabItem(label='Describe') as desc_tab:
                         with gr.Row():
                             with gr.Column():
                                 desc_input_image = grh.Image(label='Drag any image to here', source='upload', type='filepath')
                             with gr.Column():
-                                desc_method = gr.Radio(
-                                    label='Content Type',
-                                    choices=[flags.desc_type_photo, flags.desc_type_anime],
-                                    value=flags.desc_type_photo)
-                                desc_btn = gr.Button(value='Describe this Image into Prompt')
-                                params_btn = gr.Button(value='Extract params from Image and Reset')
+                                with gr.Group():
+                                    desc_method = gr.Radio(
+                                        label='Content Type',
+                                        choices=[flags.desc_type_photo, flags.desc_type_anime],
+                                        value=flags.desc_type_anime)
+                                    desc_btn = gr.Button(value='Describe this Image into Prompt')
+                                with gr.Group():
+                                    embed_image_readme = gr.Markdown(value='Extract the parameters of the embedded parameter image and then reset the working environment.', elem_classes='note_text')
+                                    params_btn = gr.Button(value='Extract params from Image and Reset')
             switch_js = "(x) => {if(x){viewer_to_bottom(100);viewer_to_bottom(500);}else{viewer_to_top();} return x;}"
             down_js = "() => {viewer_to_bottom();}"
 
@@ -404,11 +356,13 @@ with shared.gradio_root:
 
                 seed_random.change(random_checked, inputs=[seed_random], outputs=[image_seed],
                                    queue=False, show_progress=False)
-
+                # print(f"[LOGINFO] {state_topbar.value}")
                 if not args_manager.args.disable_image_log:
-                    gr.HTML(f'<a href="file={get_current_html_path()}" target="_blank">\U0001F4DA History Log</a>')
-
-            with gr.Tab(label='Style'):
+                    if "__cookie" in state_topbar.value.keys():
+                        gr.HTML(f'<a href="{args_manager.args.webroot}/file={get_current_html_path(state_topbar.value["__cookie"])}" target="_blank">\U0001F4DA History Log</a>')
+                    else:
+                        gr.HTML(f'<a href="{args_manager.args.webroot}/file={get_current_html_path()}" target="_blank">\U0001F4DA History Log</a>')
+            with gr.Tab(label='Style', elem_classes=['style_selections_tab']):
                 style_sorter.try_load_sorted_styles(
                     style_names=legal_style_names,
                     default_selected=modules.config.default_styles)
@@ -608,16 +562,17 @@ with shared.gradio_root:
                                                             info='Positive value will make white area in the mask larger, '
                                                                  'negative value will make white area smaller.'
                                                                  '(default is 0, always process before any mask invert)')
-                        inpaint_mask_upload_checkbox = gr.Checkbox(label='Enable Mask Upload', value=False)
+                        inpaint_mask_upload_checkbox = gr.Checkbox(label='Enable Mask Upload', value=True)
                         invert_mask_checkbox = gr.Checkbox(label='Invert Mask', value=False)
                         
                         inpaint_ctrls = [debugging_inpaint_preprocessor, inpaint_disable_initial_latent, inpaint_engine,
                                          inpaint_strength, inpaint_respective_field,
                                          inpaint_mask_upload_checkbox, invert_mask_checkbox, inpaint_erode_or_dilate]
 
-                        inpaint_mask_upload_checkbox.change(lambda x: gr.update(visible=x),
-                                                           inputs=inpaint_mask_upload_checkbox,
-                                                           outputs=inpaint_mask_image, queue=False, show_progress=False)
+                        inpaint_mask_upload_checkbox.change(lambda x: [gr.update(visible=x)] * 2,
+                                                            inputs=inpaint_mask_upload_checkbox,
+                                                            outputs=[inpaint_mask_image, inpaint_mask_generation_col],
+                                                            queue=False, show_progress=False)
 
                     with gr.Tab(label='FreeU'):
                         freeu_enabled = gr.Checkbox(label='Enabled', value=False)
@@ -655,13 +610,32 @@ with shared.gradio_root:
                                     queue=False, show_progress=False)
 
             with gr.Tab(label='Enhanced'):
-                backfill_prompt = gr.Checkbox(label='Backfill prompt while switching images', value=False, interactive=True, info='Extract and backfill prompt and negative prompt while switching historical gallery images.')
-                translation_timing = gr.Radio(label='Timing of translation', choices=['No translation', 'Translate then generate', 'Modify after translation'], value='Translate then generate', info='The selection of timing for prompt translation.')
-                translation_methods = gr.Radio(label='Translation methods', choices=['Model in local','APIs on third'], value='APIs on third', info='\'Model\' requires more GPU/CPU and \'APIs\' rely on third.')
-                mobile_url = gr.Checkbox(label=f'http://{args_manager.args.listen}:{args_manager.args.port}{args_manager.args.webroot}/', value=True, info='Mobile phone access address within the LAN. If you want WAN access, consulting QQ group: 938075852.', interactive=False)
+                with gr.Row():
+                    language_ui = gr.Radio(label='Language of UI', choices=['En', '中文'], value=location.language_radio(args_manager.args.language), interactive=(args_manager.args.language in ['default', 'cn', 'en']))
+                    background_theme = gr.Radio(label='Theme of background', choices=['light', 'dark'], value=args_manager.args.theme, interactive=True)
+                with gr.Group():
+                    backfill_prompt = gr.Checkbox(label='Backfill prompt while switching images', value=False, interactive=True, info='Extract and backfill prompt and negative prompt while switching historical gallery images.')
+                    embed_metadata_checkbox = gr.Checkbox(label='Default to generate image embedding parameters', value=False, interactive=True, info='All generated images come with generation environment parameters.')
+                    translation_timing = gr.Radio(label='Timing of translation', choices=['Translate then generate', 'Modify after translate', 'No translate'], value='Translate then generate', info='The selection of timing for prompt translation.')
+                    translation_methods = gr.Radio(label='Translation methods', choices=['Slim Model', 'Big Model', 'Third APIs'], value='Slim Model', info='\'Model\' requires more GPU/CPU and \'APIs\' rely on third.')
+                    mobile_url = gr.Checkbox(label=f'http://{args_manager.args.listen}:{args_manager.args.port}{args_manager.args.webroot}/', value=True, info='Mobile phone access address within the LAN. If you want WAN access, consulting QQ group: 938075852.', interactive=False)
 
-                ehps = [backfill_prompt, translation_timing, translation_methods]
-            
+            ehps = [backfill_prompt, embed_metadata_checkbox, translation_timing, translation_methods]
+            language_ui.select(None, inputs=language_ui, _js="(x) => set_language_by_ui(x)")
+            background_theme.select(None, inputs=background_theme, _js="(x) => set_theme_by_ui(x)")
+           
+            generate_mask_button.click(enhanced_parameters.set_all_enhanced_parameters, inputs=ehps) \
+                                 .then(fn=generate_mask,inputs=[
+                                                               inpaint_input_image, inpaint_mask_model,
+                                                               inpaint_mask_cloth_category,
+                                                               inpaint_mask_sam_prompt_text,
+                                                               inpaint_mask_sam_model,
+                                                               inpaint_mask_sam_quant,
+                                                               inpaint_mask_box_threshold,
+                                                               inpaint_mask_text_threshold
+                                                           ], outputs=inpaint_mask_image, show_progress=True, queue=True)
+
+            gallery_index.select(gallery_util.select_index, inputs=[gallery_index, state_topbar], outputs=[gallery, progress_window, progress_gallery, prompt_info_box, params_note_box, image_tools_checkbox, state_topbar], show_progress=False)
             gallery.select(gallery_util.select_gallery, inputs=[gallery_index, state_topbar, backfill_prompt], outputs=[prompt_info_box, prompt, negative_prompt, params_note_info, params_note_input_name, params_note_regen_button, params_note_preset_button, state_topbar], show_progress=False)
             progress_gallery.select(gallery_util.select_gallery_progress, inputs=state_topbar, outputs=[prompt_info_box, params_note_info, params_note_input_name, params_note_regen_button, params_note_preset_button, state_topbar], show_progress=False)
 
@@ -719,11 +693,14 @@ with shared.gradio_root:
         ctrls += [base_model, refiner_model, refiner_switch] + lora_ctrls
         ctrls += [input_image_checkbox, current_tab]
         ctrls += [uov_method, uov_input_image]
-        # ctrls += [outpaint_selections, inpaint_input_image, inpaint_additional_prompt, inpaint_mask_image]
-        ctrls += [outpaint_selections, inpaint_input_image, inpaint_additional_prompt, inpaint_mask_image, inpaint_input_mask]
+        ctrls += [outpaint_selections, inpaint_input_image, inpaint_additional_prompt, inpaint_mask_image]
         ctrls += ip_ctrls
         
-        system_params = gr.JSON({"__nav_id_list":topbar.nav_id_list, "__nav_preset_html":topbar.nav_preset_html}, visible=False)
+        # if "__cookie" in state_topbar.value.keys():
+        #     ctrls.append(state_topbar.value["__cookie"])
+        # else:
+        #     ctrls.append("default")
+        system_params = gr.JSON({}, visible=False)
         state_is_generating = gr.State(False)
         def parse_meta(raw_prompt_txt, is_generating, timing):
             loaded_json = None
@@ -740,14 +717,14 @@ with shared.gradio_root:
                 if is_generating:
                     return gr.update(), gr.update(), gr.update(), gr.update()
                 else:
-                    flag = (timing=='Modify after translation' and translator.is_chinese(raw_prompt_txt))
+                    flag = (timing=='Modify after translate' and translator.is_chinese(raw_prompt_txt))
                     return gr.update(), gr.update(visible=not flag), gr.update(visible=False), gr.update(visible=flag)
 
             return json.dumps(loaded_json), gr.update(visible=False), gr.update(visible=True), gr.update(visible=False)
 
         prompt.input(parse_meta, inputs=[prompt, state_is_generating, translation_timing], outputs=[prompt, generate_button, load_parameter_button, translator_button], queue=False, show_progress=False)
         
-        translator_button.click(lambda x: [gr.update(value=translator.convert(x)), gr.update(visible=True), gr.update(visible=False)], inputs=prompt, outputs=[prompt, generate_button, translator_button], queue=False, show_progress=False)
+        translator_button.click(lambda x, y: [gr.update(value=translator.convert(x, y)), gr.update(visible=True), gr.update(visible=False)], inputs=[prompt, translation_methods], outputs=[prompt, generate_button, translator_button], queue=False, show_progress=False)
 
         load_parameter_button.click(modules.meta_parser.load_parameter_button_click, inputs=[prompt, state_is_generating], outputs=[
             advanced_checkbox,
@@ -775,21 +752,17 @@ with shared.gradio_root:
             load_parameter_button
         ] + lora_ctrls, queue=False, show_progress=False)
 
-        reset_preset = [prompt, negative_prompt, style_selections, performance_selection, aspect_ratios_selection, sharpness, guidance_scale, base_model, refiner_model, refiner_switch, sampler_name, scheduler_name, adaptive_cfg, overwrite_step, overwrite_switch] + lora_ctrls
-        reset_params = reset_preset + [adm_scaler_positive, adm_scaler_negative, adm_scaler_end, image_seed]
+        reset_preset = [prompt, negative_prompt, style_selections, performance_selection, aspect_ratios_selection, sharpness, guidance_scale, base_model, refiner_model, refiner_switch, sampler_name, scheduler_name, adaptive_cfg, overwrite_step, overwrite_switch, inpaint_engine] + lora_ctrls
+        reset_params = reset_preset + [adm_scaler_positive, adm_scaler_negative, adm_scaler_end, seed_random, image_seed]
         model_check = [prompt, negative_prompt, base_model, refiner_model] + lora_ctrls
+        nav_bars = [bar_title, bar0_button, bar1_button, bar2_button, bar3_button, bar4_button, bar5_button, bar6_button, bar7_button, bar8_button]
 
-        generate_button.click(topbar.sync_generating_state_true, inputs=state_topbar, outputs=[system_params, state_topbar], show_progress=False) \
-            .then(fn=lambda x: None, inputs=system_params, _js=topbar.sync_generating_state_js) \
-            .then(lambda: (gr.update(visible=True, interactive=True), gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), [], True, gr.update(visible=False, open=False), gr.update(value=False)), outputs=[stop_button, skip_button, generate_button, gallery, state_is_generating, index_radio, image_tools_checkbox], show_progress=False) \
+        generate_button.click(topbar.process_before_generation, inputs=state_topbar, outputs=[stop_button, skip_button, generate_button, gallery, state_is_generating, index_radio, image_tools_checkbox, background_theme, bar0_button, bar1_button, bar2_button, bar3_button, bar4_button, bar5_button, bar6_button, bar7_button, bar8_button], show_progress=False) \
             .then(fn=refresh_seed, inputs=[seed_random, image_seed], outputs=image_seed) \
             .then(advanced_parameters.set_all_advanced_parameters, inputs=adps) \
             .then(enhanced_parameters.set_all_enhanced_parameters, inputs=ehps) \
-            .then(fn=generate_clicked, inputs=ctrls, outputs=[progress_html, progress_window, progress_gallery, gallery]) \
-            .then(lambda: (gr.update(visible=True, interactive=True), gr.update(visible=False, interactive=False), gr.update(visible=False, interactive=False), False), outputs=[generate_button, stop_button, skip_button, state_is_generating]) \
-            .then(lambda: (gr.update(choices=gallery_util.output_list, value=None), gr.update(visible=len(gallery_util.output_list)>0, open=False)), outputs=[gallery_index, index_radio], show_progress=False) \
-            .then(topbar.sync_generating_state_false, inputs=state_topbar, outputs=[system_params, state_topbar], show_progress=False) \
-            .then(fn=lambda x: None, inputs=system_params, _js=topbar.sync_generating_state_js) \
+            .then(fn=generate_clicked, inputs=ctrls + [state_topbar], outputs=[progress_html, progress_window, progress_gallery, gallery]) \
+            .then(topbar.process_after_generation, inputs=state_topbar, outputs=[generate_button, stop_button, skip_button, state_is_generating, gallery_index, index_radio, background_theme, bar0_button, bar1_button, bar2_button, bar3_button, bar4_button, bar5_button, bar6_button, bar7_button, bar8_button], show_progress=False) \
             .then(fn=lambda: None, _js='playNotification').then(fn=lambda: None, _js='refresh_grid_delayed')
 
         for notification_file in ['notification.ogg', 'notification.mp3']:
@@ -805,34 +778,83 @@ with shared.gradio_root:
                 from extras.wd14tagger import default_interrogator as default_interrogator_anime
                 return default_interrogator_anime(img), ["Fooocus V2", "Fooocus Masterpiece"]
             return mode, ["Fooocus V2"]
+        
+        def trigger_describe_pre(mode, img_path):
+            img_rgb = Image.open(img_path).convert('RGB')
+            return trigger_describe(mode, img_rgb)
 
-        desc_btn.click(trigger_describe, inputs=[desc_method, desc_input_image],
+        desc_btn.click(trigger_describe_pre, inputs=[desc_method, desc_input_image],
                        outputs=[prompt, style_selections], show_progress=True, queue=True)
-        params_btn.click(toolbox.extract_parameters, inputs=[desc_input_image, state_topbar], outputs=state_topbar, show_progress=True, queue=True) \
-                   .then(toolbox.reset_default_preset, inputs=state_topbar, outputs=[system_params,state_topbar], queue=True, show_progress=False) \
-                   .then(fn=lambda x: x, inputs=system_params,  _js=toolbox.reset_preset_params_js) \
-                   .then(toolbox.reset_params_from_image, inputs=state_topbar, outputs=reset_params, show_progress=False)
 
+        def trigger_uov_describe(mode, img, prompt):
+            # keep prompt if not empty
+            if prompt == '':
+                return trigger_describe(mode, img)
+            return gr.update(), gr.update()
+
+        uov_input_image.upload(trigger_uov_describe, inputs=[desc_method, uov_input_image, prompt],
+                       outputs=[prompt, style_selections], show_progress=True, queue=True)
+
+
+        params_btn.click(toolbox.extract_reset_image_params, inputs=desc_input_image, outputs=reset_params, show_progress=False, queue=True) \
+                   .then(fn=lambda: None, _js=toolbox.extract_reset_image_params_js)
     prompt_delete_button.click(toolbox.toggle_note_box_delete, inputs=state_topbar, outputs=[params_note_info, params_note_delete_button, params_note_box, state_topbar], show_progress=False)
     params_note_delete_button.click(toolbox.delete_image, inputs=state_topbar, outputs=[gallery, gallery_index, params_note_delete_button, params_note_box, state_topbar], show_progress=False)
     
     prompt_regen_button.click(toolbox.toggle_note_box_regen, inputs=model_check + [state_topbar], outputs=[params_note_info, params_note_regen_button, params_note_box, state_topbar], show_progress=False)
-    params_note_regen_button.click(toolbox.reset_default_preset, inputs=state_topbar, outputs=[system_params,state_topbar], queue=True, show_progress=False) \
-        .then(fn=lambda x: x, inputs=system_params,  _js=toolbox.reset_preset_params_js) \
-        .then(toolbox.reset_params, inputs=state_topbar, outputs=reset_params + [params_note_regen_button, params_note_box], show_progress=False)
+    params_note_regen_button.click(toolbox.reset_image_params, inputs=state_topbar, outputs=reset_params + [params_note_regen_button, params_note_box, state_topbar], show_progress=False)
 
     prompt_preset_button.click(toolbox.toggle_note_box_preset, inputs=model_check + [state_topbar], outputs=[params_note_info, params_note_input_name, params_note_preset_button, params_note_box, state_topbar], show_progress=False)
-    params_note_preset_button.click(toolbox.save_preset, inputs= [params_note_input_name, state_topbar] + reset_preset, outputs=[params_note_input_name, params_note_preset_button, params_note_box, state_topbar], show_progress=False) \
-        .then(toolbox.reset_preset_params, inputs=state_topbar, outputs=[system_params, state_topbar], queue=False, show_progress=False) \
-        .then(fn=lambda x: None, inputs=system_params, _js=toolbox.reset_preset_params_js)
+    params_note_preset_button.click(toolbox.save_preset, inputs= [params_note_input_name, state_topbar] + reset_params, outputs=[params_note_input_name, params_note_preset_button, params_note_box, state_topbar] + nav_bars, show_progress=False) \
+        .then(fn=lambda x: x, inputs=state_topbar, outputs=system_params, queue=False, show_progress=False) \
+        .then(fn=lambda x: None, inputs=system_params, _js=topbar.refresh_topbar_status_js)
 
     prompt_embed_button.click(toolbox.toggle_note_box_embed, inputs=model_check + [state_topbar], outputs=[params_note_info, params_note_embed_button, params_note_box, state_topbar], show_progress=False)
     params_note_embed_button.click(toolbox.embed_params, inputs=state_topbar, outputs=[params_note_embed_button, params_note_box, state_topbar], show_progress=False)
 
-    shared.gradio_root.load(fn=lambda x: [x, x], inputs=system_params, outputs=[system_params, state_topbar], _js=topbar.get_preset_params_js, queue=False, show_progress=False) \
-                      .then(topbar.reset_context, inputs=state_topbar, outputs=reset_preset + [gallery, gallery_index, preset_instruction, state_topbar], show_progress=False) \
+    reset_preset_all = reset_params + [gallery, gallery_index, preset_instruction, state_topbar, image_number, inpaint_mask_upload_checkbox]
+    bar0_button.click(topbar.reset_params_for_preset, inputs=[bar0_button, state_topbar], outputs=reset_preset_all, show_progress=False) \
+               .then(fn=lambda x: x, inputs=state_topbar, outputs=system_params, show_progress=False) \
+               .then(fn=lambda x: {}, inputs=system_params, outputs=system_params, _js=topbar.refresh_topbar_status_js) \
+               .then(fn=lambda: None, _js='refresh_grid_delayed')
+    bar1_button.click(topbar.reset_params_for_preset, inputs=[bar1_button, state_topbar], outputs=reset_preset_all, show_progress=False) \
+               .then(fn=lambda x: x, inputs=state_topbar, outputs=system_params, show_progress=False) \
+               .then(fn=lambda x: {}, inputs=system_params, outputs=system_params, _js=topbar.refresh_topbar_status_js) \
+               .then(fn=lambda: None, _js='refresh_grid_delayed')
+    bar2_button.click(topbar.reset_params_for_preset, inputs=[bar2_button, state_topbar], outputs=reset_preset_all, show_progress=False) \
+               .then(fn=lambda x: x, inputs=state_topbar, outputs=system_params, show_progress=False) \
+               .then(fn=lambda x: {}, inputs=system_params, outputs=system_params, _js=topbar.refresh_topbar_status_js) \
+               .then(fn=lambda: None, _js='refresh_grid_delayed')
+    bar3_button.click(topbar.reset_params_for_preset, inputs=[bar3_button, state_topbar], outputs=reset_preset_all, show_progress=False) \
+               .then(fn=lambda x: x, inputs=state_topbar, outputs=system_params, show_progress=False) \
+               .then(fn=lambda x: {}, inputs=system_params, outputs=system_params, _js=topbar.refresh_topbar_status_js) \
+               .then(fn=lambda: None, _js='refresh_grid_delayed')
+    bar4_button.click(topbar.reset_params_for_preset, inputs=[bar4_button, state_topbar], outputs=reset_preset_all, show_progress=False) \
+               .then(fn=lambda x: x, inputs=state_topbar, outputs=system_params, show_progress=False) \
+               .then(fn=lambda x: {}, inputs=system_params, outputs=system_params, _js=topbar.refresh_topbar_status_js) \
+               .then(fn=lambda: None, _js='refresh_grid_delayed')
+    bar5_button.click(topbar.reset_params_for_preset, inputs=[bar5_button, state_topbar], outputs=reset_preset_all, show_progress=False) \
+               .then(fn=lambda x: x, inputs=state_topbar, outputs=system_params, show_progress=False) \
+               .then(fn=lambda x: {}, inputs=system_params, outputs=system_params, _js=topbar.refresh_topbar_status_js) \
+               .then(fn=lambda: None, _js='refresh_grid_delayed')
+    bar6_button.click(topbar.reset_params_for_preset, inputs=[bar6_button, state_topbar], outputs=reset_preset_all, show_progress=False) \
+               .then(fn=lambda x: x, inputs=state_topbar, outputs=system_params, show_progress=False) \
+               .then(fn=lambda x: {}, inputs=system_params, outputs=system_params, _js=topbar.refresh_topbar_status_js) \
+               .then(fn=lambda: None, _js='refresh_grid_delayed')
+    bar7_button.click(topbar.reset_params_for_preset, inputs=[bar7_button, state_topbar], outputs=reset_preset_all, show_progress=False) \
+               .then(fn=lambda x: x, inputs=state_topbar, outputs=system_params, show_progress=False) \
+               .then(fn=lambda x: {}, inputs=system_params, outputs=system_params, _js=topbar.refresh_topbar_status_js) \
+               .then(fn=lambda: None, _js='refresh_grid_delayed')
+    bar8_button.click(topbar.reset_params_for_preset, inputs=[bar8_button, state_topbar], outputs=reset_preset_all, show_progress=False) \
+               .then(fn=lambda x: x, inputs=state_topbar, outputs=system_params, show_progress=False) \
+               .then(fn=lambda x: {}, inputs=system_params, outputs=system_params, _js=topbar.refresh_topbar_status_js) \
+               .then(fn=lambda: None, _js='refresh_grid_delayed')
+
+    shared.gradio_root.load(fn=lambda x: x, inputs=system_params, outputs=state_topbar, _js=topbar.get_system_params_js, queue=False, show_progress=False) \
+                      .then(topbar.init_nav_bars, inputs=state_topbar, outputs=nav_bars + [progress_window, language_ui, background_theme, gallery_index, index_radio, image_tools_checkbox, inpaint_mask_upload_checkbox], show_progress=False) \
+                      .then(topbar.reset_params_for_preset, inputs=[bar0_button, state_topbar], outputs=reset_preset_all, show_progress=False) \
                       .then(fn=lambda x: x, inputs=state_topbar, outputs=system_params, show_progress=False) \
-                      .then(fn=lambda x: None, inputs=system_params, _js=topbar.toggle_system_message_js) \
+                      .then(fn=lambda x: {}, inputs=system_params, outputs=system_params, _js=topbar.refresh_topbar_status_js) \
                       .then(topbar.sync_message, inputs=state_topbar, outputs=state_topbar).then(fn=lambda: None, _js='refresh_grid_delayed')
 
 
@@ -841,7 +863,7 @@ def dump_default_english_config():
     dump_english_config(grh.all_components)
 
 
-# dump_default_english_config()
+#dump_default_english_config()
 
 shared.gradio_root.launch(
     inbrowser=args_manager.args.in_browser,

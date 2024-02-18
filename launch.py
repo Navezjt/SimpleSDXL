@@ -24,9 +24,12 @@ from build_launcher import build_launcher, is_win32_standalone_build, python_emb
 from modules.launch_util import is_installed, run, python, run_pip, requirements_met
 from modules.model_loader import load_file_from_url
 
+<<<<<<< HEAD
 from modules.config import path_checkpoints, path_loras, path_vae_approx, path_fooocus_expansion, \
     checkpoint_downloads, path_embeddings, embeddings_downloads, lora_downloads
 
+=======
+>>>>>>> 0ddf7e5cd162e39c3c6615de4108492ba1b35b6d
 REINSTALL_ALL = False
 TRY_INSTALL_XFORMERS = False
 
@@ -86,47 +89,6 @@ vae_approx_filenames = [
 ]
 
 
-def download_models():
-    for file_name, url in checkpoint_downloads.items():
-        load_file_from_url(url=url, model_dir=path_checkpoints, file_name=file_name)
-    for file_name, url in embeddings_downloads.items():
-        load_file_from_url(url=url, model_dir=path_embeddings, file_name=file_name)
-    for file_name, url in lora_downloads.items():
-        load_file_from_url(url=url, model_dir=path_loras, file_name=file_name)
-    for file_name, url in vae_approx_filenames:
-        load_file_from_url(url=url, model_dir=path_vae_approx, file_name=file_name)
-
-    load_file_from_url(
-        url='https://huggingface.co/lllyasviel/misc/resolve/main/fooocus_expansion.bin',
-        model_dir=path_fooocus_expansion,
-        file_name='pytorch_model.bin'
-    )
-
-    return
-
-# def download_models():
-#     from modules.model_loader import load_file_from_url
-#     from modules.config import path_checkpoints, path_loras, path_vae_approx, path_fooocus_expansion, \
-#         checkpoint_downloads, path_embeddings, embeddings_downloads, lora_downloads
-
-#     for file_name, url in embeddings_downloads.items():
-#         load_file_from_url(url=url, model_dir=path_embeddings, file_name=file_name)
-#     for file_name, url in lora_downloads.items():
-#         load_file_from_url(url=url, model_dir=path_loras, file_name=file_name)
-#     for file_name, url in vae_approx_filenames:
-#         load_file_from_url(url=url, model_dir=path_vae_approx, file_name=file_name)
-#     for file_name, url in checkpoint_downloads.items():
-#         load_file_from_url(url=url, model_dir=path_checkpoints, file_name=file_name)
-
-#     load_file_from_url(
-#         url='https://huggingface.co/lllyasviel/misc/resolve/main/fooocus_expansion.bin',
-#         model_dir=path_fooocus_expansion,
-#         file_name='pytorch_model.bin'
-#     )
-
-#     return
-
-
 def ini_args():
     from args_manager import args
     return args
@@ -166,6 +128,49 @@ if '--listen' not in sys.argv:
 if '--port' not in sys.argv:
     args.port = 6067
 
+def download_models():
+    from modules.model_loader import load_file_from_url
+    from modules import config
+
+    os.environ["U2NET_HOME"] = config.path_inpaint
+    os.environ["HUF_MIRROR"] = 'hf-mirror.com'
+
+    for file_name, url in vae_approx_filenames:
+        load_file_from_url(url=url, model_dir=config.path_vae_approx, file_name=file_name)
+
+    load_file_from_url(
+        url='https://huggingface.co/lllyasviel/misc/resolve/main/fooocus_expansion.bin',
+        model_dir=config.path_fooocus_expansion,
+        file_name='pytorch_model.bin'
+    )
+
+    if args.disable_preset_download:
+        print('Skipped model download.')
+        return
+
+    if not args.always_download_new_model:
+        if not os.path.exists(os.path.join(config.path_checkpoints, config.default_base_model_name)):
+            for alternative_model_name in config.previous_default_models:
+                if os.path.exists(os.path.join(config.path_checkpoints, alternative_model_name)):
+                    print(f'You do not have [{config.default_base_model_name}] but you have [{alternative_model_name}].')
+                    print(f'Fooocus will use [{alternative_model_name}] to avoid downloading new models, '
+                          f'but you are not using latest models.')
+                    print('Use --always-download-new-model to avoid fallback and always get new models.')
+                    config.checkpoint_downloads = {}
+                    config.default_base_model_name = alternative_model_name
+                    break
+
+    for file_name, url in config.checkpoint_downloads.items():
+        load_file_from_url(url=url, model_dir=config.path_checkpoints, file_name=file_name)
+    for file_name, url in config.embeddings_downloads.items():
+        load_file_from_url(url=url, model_dir=config.path_embeddings, file_name=file_name)
+    for file_name, url in config.lora_downloads.items():
+        load_file_from_url(url=url, model_dir=config.path_loras, file_name=file_name)
+
+    return
+
+
 download_models()
+
 
 from webui import *

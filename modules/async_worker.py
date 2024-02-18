@@ -142,11 +142,13 @@ def worker():
         inpaint_input_image = args.pop()
         inpaint_additional_prompt = args.pop()
         inpaint_mask_image_upload = args.pop()
-        inpaint_input_mask = args.pop()
-
-        if enhanced_parameters.translation_timing != 'No translation':
-            prompt = translator.convert(prompt)
-            negative_prompt = translator.convert(negative_prompt)
+        
+        # usr id
+        state = args[0]
+        cookie = state["__cookie"]
+        if enhanced_parameters.translation_timing != 'No translate':
+            prompt = translator.convert(prompt, enhanced_parameters.translation_methods)
+            negative_prompt = translator.convert(negative_prompt, enhanced_parameters.translation_methods)
 
         cn_tasks = {x: [] for x in flags.ip_list}
         for _ in range(4):
@@ -282,8 +284,7 @@ def worker():
                     and isinstance(inpaint_input_image, dict):
                 inpaint_image = inpaint_input_image['image']
                 inpaint_mask = inpaint_input_image['mask'][:, :, 0]
-                if inpaint_input_mask is not None and np.sum(inpaint_input_mask>0) > 0: inpaint_mask = (inpaint_input_mask > 0).astype(np.uint8)*255
-                inpaint_image = HWC3(inpaint_image)
+                
                 if advanced_parameters.inpaint_mask_upload_checkbox:
                     if isinstance(inpaint_mask_image_upload, np.ndarray):
                         if inpaint_mask_image_upload.ndim == 3:
@@ -312,7 +313,7 @@ def worker():
                         print(f'[Inpaint] Current inpaint model is {inpaint_patch_model_path}')
                         if refiner_model_name == 'None':
                             use_synthetic_refiner = True
-                            refiner_switch = 0.5
+                            refiner_switch = 0.8
                     else:
                         inpaint_head_model_path, inpaint_patch_model_path = None, None
                         print(f'[Inpaint] Parameterized inpaint is disabled.')
@@ -343,10 +344,10 @@ def worker():
         ip_adapter.load_ip_adapter(clip_vision_path, ip_negative_path, ip_adapter_path)
         ip_adapter.load_ip_adapter(clip_vision_path, ip_negative_path, ip_adapter_face_path)
 
-        switch = int(round(steps * refiner_switch))
-
         if advanced_parameters.overwrite_step > 0:
             steps = advanced_parameters.overwrite_step
+
+        switch = int(round(steps * refiner_switch))
 
         if advanced_parameters.overwrite_switch > 0:
             switch = advanced_parameters.overwrite_switch
@@ -519,7 +520,7 @@ def worker():
 
             if direct_return:
                 d = [('Upscale (Fast)', '2x')]
-                log(uov_input_image, d)
+                log(uov_input_image, d, cookie)
                 yield_result(async_task, uov_input_image, do_not_show_finished_images=True)
                 return
 
@@ -806,8 +807,9 @@ def worker():
                     for li, (n, w) in enumerate(loras):
                         if n != 'None':
                             d.append((f'LoRA {li + 1}', f'{n} : {w}'))
-                    d.append(('Version', 'v' + fooocus_version.version))
-                    log(x, d)
+                    import enhanced.version as version
+                    d.append(('Version', 'v' + fooocus_version.version + f' {version.branch}_{version.get_simplesdxl_ver()}'))
+                    log(x, d, cookie)
 
                 yield_result(async_task, imgs, do_not_show_finished_images=len(tasks) == 1)
             except ldm_patched.modules.model_management.InterruptProcessingException as e:
