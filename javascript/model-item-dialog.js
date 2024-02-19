@@ -403,7 +403,7 @@ function showDialogContent(params) {
 // 显示遮罩层和弹框
 function showDialog() {
   mask.style.visibility = 'visible';
-  showDialogContent({ dialogTitleName: 'All Content' })
+  showDialogContent({ dialogTitleName: '目录' })
 }
 
 // 隐藏遮罩层和弹框
