@@ -17,15 +17,6 @@ images_list_keys = []
 images_prompt = {}
 images_prompt_keys = []
 images_ads = {}
-<<<<<<< HEAD
-
-
-
-def refresh_output_list():
-    global output_list, max_per_page
-
-    listdirs = [f for f in os.listdir(config.path_outputs) if f!="embed" and os.path.isdir(os.path.join(config.path_outputs,f))]
-=======
 history_path = ""
 def refresh_output_list(max_per_page, cookie='default'):
     global history_path
@@ -36,7 +27,6 @@ def refresh_output_list(max_per_page, cookie='default'):
     # print(f"[LOGINFO] {history_path}")
     
     listdirs = [f for f in os.listdir(history_path) if f!="embed" and os.path.isdir(os.path.join(history_path,f))]
->>>>>>> 0ddf7e5cd162e39c3c6615de4108492ba1b35b6d
     if listdirs is None:
         return None
     listdirs1 = listdirs.copy()

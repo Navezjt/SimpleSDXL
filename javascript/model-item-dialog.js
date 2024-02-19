@@ -61,8 +61,8 @@ const modelData = [{
   image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/helloip3dIP_helloip3dV13e.png',
   decs: '[SD1.5] 塑料盲盒公仔风格'
 }, {
-  label: 'juggernautXL_version6Rundiffusion.safetensors',
-  value: 'juggernautXL_version6Rundiffusion.safetensors',
+  label: 'juggernautXL_v8Rundiffusion.safetensors',
+  value: 'juggernautXL_v8Rundiffusion.safetensors',
   image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/juggernautXL_version6Rundiffusion.png',
   decs: '[SDXL] 真实，电影，照片，各类艺术风格，SDXL基础模型'
 }, {
@@ -98,7 +98,7 @@ const modelData = [{
 }, {
   label: 'sd_xl_refiner_1.0_0.9vae.safetensors',
   value: 'sd_xl_refiner_1.0_0.9vae.safetensors',
-  image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/sd_xl_base_1.0.png',
+  image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/sd_xl_refiner_1.0_0.9vae.png',
   decs: '[SDXL-Refiner] 原始SDXL基础专属精炼模型'
 }, {
   label: 'sdxl_artbookv2_sdvn.safetensors',

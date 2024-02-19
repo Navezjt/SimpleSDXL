@@ -24,12 +24,6 @@ from build_launcher import build_launcher, is_win32_standalone_build, python_emb
 from modules.launch_util import is_installed, run, python, run_pip, requirements_met
 from modules.model_loader import load_file_from_url
 
-<<<<<<< HEAD
-from modules.config import path_checkpoints, path_loras, path_vae_approx, path_fooocus_expansion, \
-    checkpoint_downloads, path_embeddings, embeddings_downloads, lora_downloads
-
-=======
->>>>>>> 0ddf7e5cd162e39c3c6615de4108492ba1b35b6d
 REINSTALL_ALL = False
 TRY_INSTALL_XFORMERS = False
 
