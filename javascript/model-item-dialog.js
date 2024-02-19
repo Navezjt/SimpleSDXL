@@ -1,177 +1,177 @@
 /** new 模型 */
 // 模型的数据
 const modelData = [{
-  label: 'None',
+  label: '无',
   value: 'None',
   image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/nones.png',
-  decs: 'None'
+  decs: '未选择模型'
 }, {
-  label: '3dAnimationDiffusion_v10.safetensors',
+  label: '3D电影风格',
   value: '3dAnimationDiffusion_v10.safetensors',
   image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/3dAnimationDiffusion_v10.png',
   decs: '[SD1.5] 迪斯尼、梦工厂、皮克斯3D电影风格'
 }, {
-  label: 'artbook_sdxl_v1.1.fp16.safetensors',
+  label: '洪恩绘本模型sdxlv1',
   value: 'artbook_sdxl_v1.1.fp16.safetensors',
   image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/artbook_sdxl_v1.1.fp16.png',
   decs: '[SDXL] 初版sdxl洪恩绘本模型'
 }, {
-  label: 'artbookv2.safetensors',
+  label: '洪恩绘本模型sd15v2',
   value: 'artbookv2.safetensors',
   image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/artbookv2.png',
   decs: '[SD1.5] 洪恩sd1.5绘本模型'
 }, {
-  label: 'bluePencilXL_v310.safetensors',
+  label: '二次元动漫',
   value: 'bluePencilXL_v310.safetensors',
   image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/bluePencilXL_v310.png',
   decs: '[SDXL] 二次元动漫风格'
 }, {
-  label: 'disneyPixarCartoon_v10b.safetensors',
+  label: '皮克斯3D',
   value: 'disneyPixarCartoon_v10b.safetensors',
   image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/disneyPixarCartoon_v10b.png',
   decs: '[SD1.5] 皮克斯3D建模风格'
 }, {
-  label: 'disneyStyleV1_v10.safetensors',
+  label: '迪士尼3D',
   value: 'disneyStyleV1_v10.safetensors',
   image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/disneyStyleV1_v10.png',
   decs: '[SD1.5] 迪士尼3D建模风格'
 }, {
-  label: 'DreamShaper_8_pruned.safetensors',
+  label: 'DreamShaper8',
   value: 'DreamShaper_8_pruned.safetensors',
   image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/DreamShaper_8_pruned.png',
   decs: '[SDXL] 真实照片，二次元，各类艺术风格形式'
 }, {
-  label: 'dreamshaper_blindbox_c4d.fp16.safetensors',
+  label: 'DreamShaper融合盲盒',
   value: 'dreamshaper_blindbox_c4d.fp16.safetensors',
   image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/dreamshaper_blindbox_c4d.fp16.png',
-  decs: '[SD1.5] dreamshaper融合盲盒lora'
+  decs: '[SD1.5] dreamshaper融合盲盒以及c4d的lora'
 }, {
-  label: 'fastercluck_v2.safetensors',
+  label: '3D渲染',
   value: 'fastercluck_v2.safetensors',
   image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/fastercluck_v2.png',
   decs: '[SDXL] 3D渲染风格'
 }, {
-  label: 'ipDESIGN3D_v31.safetensors',
+  label: '3D模型',
   value: 'ipDESIGN3D_v31.safetensors',
   image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/ipDESIGN3D_v31.png',
   decs: '[SD1.5] 3D模型渲染风格'
 }, {
-  label: 'helloip3dIP_helloip3dV13e.safetensors',
+  label: '盲盒公仔',
   value: 'helloip3dIP_helloip3dV13e.safetensors',
   image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/helloip3dIP_helloip3dV13e.png',
   decs: '[SD1.5] 塑料盲盒公仔风格'
 }, {
-  label: 'juggernautXL_v8Rundiffusion.safetensors',
+  label: 'SDXL基础模型juggernautXLv8',
   value: 'juggernautXL_v8Rundiffusion.safetensors',
   image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/juggernautXL_version6Rundiffusion.png',
   decs: '[SDXL] 真实，电影，照片，各类艺术风格，SDXL基础模型'
 }, {
-  label: 'playground-v2.fp16.safetensors',
+  label: 'SDXL基础模型playgroundv2',
   value: 'playground-v2.fp16.safetensors',
   image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/playground-v2.fp16.png',
   decs: '[SDXL] 真实，艺术渲染，动画，SDXL基础模型'
 }, {
-  label: 'realisticStockPhoto_v10.safetensors',
+  label: 'SDXL基础模型电影',
   value: 'realisticStockPhoto_v10.safetensors',
   image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/realisticStockPhoto_v10.png',
   decs: '[SDXL] 真实，照片质感，电影，SDXL基础模型'
 }, {
-  label: 'revAnimated_v122EOL.safetensors',
+  label: 'SDXL基础模型二次元',
   value: 'revAnimated_v122EOL.safetensors',
   image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/revAnimated_v122EOL.png',
   decs: '[SDXL] 绘本，动漫，幻想，卡通，SDXL基础模型'
 }, {
-  label: 'sd_xl_base_1.0_0.9vae.safetensors',
+  label: 'SDXL基础精炼模型VAE',
   value: 'sd_xl_base_1.0_0.9vae.safetensors',
   image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/sd_xl_base_1.0_0.9vae.png',
   decs: '[SDXL] 真实、质感、绘画细节内容填充，SDXL基础精炼模型'
 }, {
-  label: 'sd_xl_base_1.0.safetensors',
+  label: '原始SDXL基础模型',
   value: 'sd_xl_base_1.0.safetensors',
   image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/sd_xl_base_1.0.png',
   decs: '[SDXL] 原始SDXL基础模型'
 }, {
-  label: 'sdvn53dcutewave_v10.safetensors',
+  label: '可爱3D',
   value: 'sdvn53dcutewave_v10.safetensors',
   image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/sdvn53dcutewave_v10.png',
   decs: '[SD1.5] 3D，儿童，玩具，角色设计'
 }, {
-  label: 'sd_xl_refiner_1.0_0.9vae.safetensors',
+  label: '原始SDXL基础精炼模型vae',
   value: 'sd_xl_refiner_1.0_0.9vae.safetensors',
   image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/sd_xl_refiner_1.0_0.9vae.png',
   decs: '[SDXL-Refiner] 原始SDXL基础专属精炼模型'
 }, {
-  label: 'sdxl_artbookv2_sdvn.safetensors',
+  label: '洪恩绘本SDXLv2',
   value: 'sdxl_artbookv2_sdvn.safetensors',
   image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/sdxl_artbookv2_sdvn.png',
   decs: '[SDXL] 洪恩绘本SDXLv2，手绘痕迹更明显'
 }]
 // lora的数据
 const loraData = [{
-  label: 'None',
+  label: '无',
   value: 'None',
   image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/nones.png',
-  decs: 'None'
+  decs: '未加载lora'
 }, {
-  label: '3dmodel_cute3d.safetensors',
+  label: '可爱皮克斯角色',
   value: '3dmodel_cute3d.safetensors',
   image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/3dmodel_cute3d.png',
-  decs: '3D，可爱，皮克斯，人物动物画风'
+  decs: '3D，可爱，皮克斯，人物动物画风(触发词：MG_ip)'
 }, {
-  label: '3DRedmond-3DRenderStyle-3DRenderAF.safetensors',
+  label: '3D渲染',
   value: '3DRedmond-3DRenderStyle-3DRenderAF.safetensors',
   image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/3DRedmond-3DRenderStyle-3DRenderAF.png',
-  decs: '3D渲染风格'
+  decs: '3D渲染风格(触发词：3D Render Style,3DRenderAF)'
 }, {
-  label: 'add-detail-xl.safetensors',
+  label: '细节增修',
   value: 'add-detail-xl.safetensors',
   image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/add-detail-xl.png',
   decs: '细节化，添加，修改细节'
 }, {
-  label: 'chatuxuan.safetensors',
+  label: '扁平艺术插图',
   value: 'chatuxuan.safetensors',
   image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/chatuxuan.png',
-  decs: '扁平艺术插图、矢量插画'
+  decs: '扁平艺术插图、矢量插画(触发词：chatu)'
 }, {
-  label: 'COOLKIDS_XL_0.3_RC.safetensors',
+  label: '绘本儿童角色',
   value: 'COOLKIDS_XL_0.3_RC.safetensors',
   image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/COOLKIDS_XL_0.3_RC.png',
-  decs: '儿童手绘绘本风格'
+  decs: '手绘儿童绘本风格'
 }, {
-  label: 'cute_blindbox_sdxl.safetensors',
-  value: 'cute_blindbox_sdxl.safetensors',
+  label: '可爱盲盒',
+  value: 'Cute_3D_Cartoon.safetensors',
   image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/cute_blindbox_sdxl.png',
-  decs: '可爱盲盒，塑料模型，手办'
+  decs: '可爱盲盒，塑料模型，手办(触发词：blindbox)'
 }, {
-  label: 'dongsen_xl.safetensors',
+  label: '动森场景',
   value: 'dongsen_xl.safetensors',
   image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/dongsen_xl.png',
-  decs: '动物森友会建模风格'
+  decs: '动物森友会建模风格(触发词：chibi,3D)'
 }, {
-  label: 'free-hand.safetensors',
+  label: '手绘魔幻插图',
   value: 'free-hand.safetensors',
   image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/free-hand.png',
-  decs: '手绘插图，平面，魔幻'
+  decs: '手绘插图，平面，魔幻(触发词：free-hand)'
 }, {
-  label: 'ILLUSTRE_v1.safetensors',
+  label: '蜡笔油画',
   value: 'ILLUSTRE_v1.safetensors',
   image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/ILLUSTRE_v1.png',
   decs: '蜡笔油画质感插图'
 }, {
-  label: 'loha_animal_sdxl.safetensors',
+  label: '可爱动物',
   value: 'loha_animal_sdxl.safetensors',
   image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/loha_animal_sdxl.png',
-  decs: '可爱，毛茸茸动物'
+  decs: '可爱，毛茸茸的小动物'
 }, {
-  label: 'MODILL_XL_0.27_RC.safetensors',
+  label: '现代儿童绘本',
   value: 'MODILL_XL_0.27_RC.safetensors',
   image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/MODILL_XL_0.27_RC.png',
   decs: '现代儿童绘本彩色插画'
 }, {
-  label: 'OldillXL_0.4_RC.safetensors',
+  label: '广告报纸',
   value: 'OldillXL_0.4_RC.safetensors',
   image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/OldillXL_0.4_RC.png',
-  decs: '老派西式儿童，报纸插画'
+  decs: '老派欧式广告报纸插画'
 }, {
   label: 'Samaritan 3d Cartoon SDXL.safetensors',
   value: 'Samaritan 3d Cartoon SDXL.safetensors',
