@@ -173,27 +173,27 @@ const loraData = [{
   image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/OldillXL_0.4_RC.png',
   decs: '老派欧式广告报纸插画'
 }, {
-  label: 'Samaritan 3d Cartoon SDXL.safetensors',
+  label: '3D卡通电影',
   value: 'Samaritan 3d Cartoon SDXL.safetensors',
   image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/Samaritan 3d Cartoon SDXL.png',
   decs: '3D动漫，塑料模型,midjourney，皮克斯风格'
 }, {
-  label: 'sd_xl_offset_example-lora_1.0.safetensors',
+  label: 'SDXL基础lora',
   value: 'sd_xl_offset_example-lora_1.0.safetensors',
   image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/sd_xl_offset_example-lora_1.0.jpeg',
-  decs: 'SDXL基础lora'
+  decs: 'SDXL基础lora，细节增修'
 }, {
-  label: 'SDXL_FILM_PHOTOGRAPHY_STYLE_BetaV0.4.safetensors',
+  label: '电影画质',
   value: 'SDXL_FILM_PHOTOGRAPHY_STYLE_BetaV0.4.safetensors',
   image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/SDXL_FILM_PHOTOGRAPHY_STYLE_BetaV0.4.jpeg',
   decs: '电影画质，真实，超清'
 }, {
-  label: 'sdxl_lcm_lora.safetensors',
+  label: 'lcm加速',
   value: 'sdxl_lcm_lora.safetensors',
   image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/sdxl_lcm_lora.png',
   decs: 'lcm加速模型'
 }, {
-  label: 'Stylized_Setting_SDXL.safetensors',
+  label: '物品场景3D',
   value: 'Stylized_Setting_SDXL.safetensors',
   image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/Stylized_Setting_SDXL.png',
   decs: '游戏物品饰品、三维渲染建筑物，地图插件'
@@ -218,7 +218,7 @@ function getElement(id) {
 /** 创建对应模型元素 基础模型*/
 async function createModelElm() {
   // 最上层的原始div
-  const baseModel = getElement('component-138')
+  const baseModel = getElement('base_model')
   const oldModel = baseModel.querySelectorAll('.wrap-inner');
   if (oldModel && oldModel.length !== 0) {
     oldModel[0].parentElement.style.display = 'none'
@@ -253,7 +253,7 @@ function showModelChoose(params, type) {
 /** 创建对应模型元素 精炼模型*/
 async function createModelRefinerElm() {
   // 最上层的原始div
-  const baseModel = getElement('component-139')
+  const baseModel = getElement('refiner_model')
   const oldModel = baseModel.querySelectorAll('.wrap-inner');
   if (oldModel && oldModel.length !== 0) {
     oldModel[0].parentElement.style.display = 'none'
@@ -480,7 +480,8 @@ function noChooseBtnItem(type) {
 
 // 没有选中时默认的lora按钮
 function showLoRaAllWrapNoChoose() {
-  const baseloRaWrap = getElement('component-143')
+  const baseloRaWrap = getElement('LoRA-All-Group')
+  console.log(baseloRaWrap);
   const oldModel = baseloRaWrap.querySelectorAll('.wrap-inner');
   for (let index = 0; index < oldModel.length; index++) {
     const loRasAllWrap = document.createElement('div');
@@ -524,7 +525,7 @@ function setChooseModelValue(baseElId, params, type) {
     componentShowModel.append(modelChoose);
   }
   // 给input 赋值 
-  setInputValue('component-138', params, 0)
+  setInputValue('base_model', params, 0)
   // 隐藏dialog
   hideDialog()
 }
@@ -549,7 +550,7 @@ function setChooseRefinerModelValue(baseElId, params, type) {
     componentShowModel.append(modelChoose);
   }
   // 给input 赋值 
-  setInputValue('component-139', params, 0)
+  setInputValue('refiner_model', params, 0)
   // 隐藏dialog
   hideDialog()
 }
@@ -557,7 +558,7 @@ function setChooseRefinerModelValue(baseElId, params, type) {
 function setChooseLoraItemValue(params, type) {
   // 创建一个新的lora
   const index = Math.round(type.split('-')[2])
-  const baseloRaWrap = getElement('component-143')
+  const baseloRaWrap = getElement('LoRA-All-Group')
   const oldModel = baseloRaWrap.querySelectorAll('.wrap-inner');
   const loRasAllWrap = getElement('component-wrap-' + type);
   // 选中了  删除点击选择按钮
@@ -578,7 +579,7 @@ function setChooseLoraItemValue(params, type) {
     loRasAllWrap.appendChild(modelChoose);
   }
   oldModel[index].parentElement.parentElement.appendChild(loRasAllWrap);
-  setInputValue('component-143', params, index)
+  setInputValue('LoRA-All-Group', params, index)
   // 隐藏dialog
   hideDialog()
 }
