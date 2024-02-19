@@ -32,6 +32,7 @@ def javascript_html():
     viewer_js_path = webpath('javascript/viewer.js')
     image_viewer_js_path = webpath('javascript/imageviewer.js')
     topbar_js_path = webpath('javascript/topbar.js')
+    model_item_dialog = webpath('javascript/model-item-dialog.js')
     samples_path = webpath(os.path.abspath('./sdxl_styles/samples/fooocus_v2.jpg'))
     head = f'<script type="text/javascript">{localization_js(args_manager.args.language)}</script>\n'
     head += f'<script type="text/javascript" src="{script_js_path}"></script>\n'
@@ -46,6 +47,7 @@ def javascript_html():
 
     theme = args_manager.args.theme if args_manager.args.theme else "light"
     head += f'<script type="text/javascript">set_theme(\"{theme}\");</script>\n'
+    head += f'<script type="text/javascript" src="{model_item_dialog}"></script>\n'
 
     return head
 
