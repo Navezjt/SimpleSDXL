@@ -1,5 +1,5 @@
 {
-    "default_model": "juggernautXL_version6Rundiffusion.safetensors",
+    "default_model": "juggernautXL_v8Rundiffusion.safetensors",
     "default_refiner": "3dAnimationDiffusion_v10.safetensors",
     "default_refiner_switch": 0.8,
     "default_loras": [

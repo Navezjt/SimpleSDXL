@@ -72,7 +72,7 @@ const modelData = [{
   decs: '[SDXL] 真实，艺术渲染，动画，SDXL基础模型'
 }, {
   label: 'SDXL基础模型电影',
-  value: 'realisticStockPhoto_v10.safetensors',
+  value: 'realisticStockPhoto_v20.safetensors',
   image: 'https://galaxyfs-in-dev.dev.ihuman.com/nas/ai-tools/realisticStockPhoto_v10.png',
   decs: '[SDXL] 真实，照片质感，电影，SDXL基础模型'
 }, {
@@ -223,17 +223,104 @@ async function createModelElm() {
   if (oldModel && oldModel.length !== 0) {
     oldModel[0].parentElement.style.display = 'none'
   }
-
-  // 更换的新的div-父级
-  const componentShowModel = document.createElement('div');
-  componentShowModel.id = "component-show-model";
-  baseModel.appendChild(componentShowModel);
+  // 判断是否已经存在这个元素
+  let componentShowModel = null
+  if (!getElement('component-show-model')) {
+    // 更换的新的div-父级
+    componentShowModel = document.createElement('div');
+    componentShowModel.id = "component-show-model";
+    baseModel.appendChild(componentShowModel);
+  } else {
+    resetElItem(MODEL)
+    componentShowModel = getElement('component-show-model');
+  }
   const inputs = oldModel[0].querySelectorAll('input');
   const findItem = modelData.find((i) => i.value === inputs[0].value)
   const modelChoose = showModelChoose(findItem, MODEL)
   componentShowModel.append(modelChoose);
-
 }
+/** 创建对应模型元素 精炼模型*/
+async function createModelRefinerElm() {
+  // 最上层的原始div
+  const baseModel = getElement('refiner_model')
+  const oldModel = baseModel.querySelectorAll('.wrap-inner');
+  if (oldModel && oldModel.length !== 0) {
+    oldModel[0].parentElement.style.display = 'none'
+  }
+
+  let componentShowModel = null
+  if (!getElement('component-show-refiner-model')) {
+    // 更换的新的div-父级
+    componentShowModel = document.createElement('div');
+    componentShowModel.id = "component-show-refiner-model";
+    baseModel.appendChild(componentShowModel);
+  } else {
+    resetElItem(REFINER_MODEL)
+    resetBtnItem(REFINER_MODEL)
+    componentShowModel = getElement('component-show-refiner-model');
+  }
+  const inputs = oldModel[0].querySelectorAll('input');
+  if (inputs[0] && inputs[0].value !== 'None') {
+    const findItem = modelData.find((i) => i.value === inputs[0].value)
+    const modelChoose = showModelChoose(findItem, REFINER_MODEL)
+    componentShowModel.append(modelChoose);
+  } else {
+    btnNone = noChooseBtnItem(REFINER_MODEL)
+    componentShowModel.append(btnNone);
+  }
+}
+// 没有选中时的 点击按钮
+function noChooseBtnItem(type) {
+  const btnNone = document.createElement('button');
+  btnNone.id = "choose-div-button-" + type;
+  btnNone.style.width = '100px';
+  btnNone.textContent = '点击选择';
+  btnNone.style.padding = "10px";
+  btnNone.style.border = "1px solid #374151";
+  btnNone.style.borderRadius = "8px";
+  btnNone.style.fontSize = "12px";
+
+  // 为最外层元素添加点击事件监听器
+  btnNone.addEventListener("click", function () {
+    dialogType = type
+    toChooseModel()
+  });
+  return btnNone
+}
+
+// 没有选中时默认的lora按钮
+function showLoRaAllWrapNoChoose() {
+  const baseloRaWrap = getElement('LoRA-All-Group')
+  const oldModel = baseloRaWrap.querySelectorAll('.wrap-inner');
+  for (let index = 0; index < oldModel.length; index++) {
+    let loRasAllWrap = null
+    if (!getElement("component-wrap-lora-item-" + index)) {
+      // 更换的新的div-父级
+      loRasAllWrap = document.createElement('div');
+      loRasAllWrap.id = "component-wrap-lora-item-" + index;
+      oldModel[index].parentElement.parentElement.appendChild(loRasAllWrap);
+    } else {
+      resetElItem(LORA_ITEM + index)
+      resetBtnItem(LORA_ITEM + index)
+      loRasAllWrap = getElement("component-wrap-lora-item-" + index);
+    }
+    // 查找对应input的值
+    const oldModelInput = oldModel[index].querySelectorAll('input');
+    // 有值就展示回显 没有就 按钮
+    if (oldModelInput[0] && oldModelInput[0].value !== 'None') {
+      const findItem = loraData.find((i) => i.value === oldModelInput[0].value)
+      const modelChoose = showModelChoose(findItem, LORA_ITEM + index)
+      loRasAllWrap.appendChild(modelChoose);
+      oldModel[index].parentElement.parentElement.appendChild(loRasAllWrap);
+    } else {
+      btnNone = noChooseBtnItem(LORA_ITEM + index)
+      loRasAllWrap.append(btnNone);
+    }
+    oldModel[index].parentElement.style.display = 'none'
+  }
+}
+
+// 选中回显的模型 
 function showModelChoose(params, type) {
   // 回显设置的模型
   const modelChoose = document.createElement('button');
@@ -245,35 +332,10 @@ function showModelChoose(params, type) {
   // 为最外层元素添加点击事件监听器
   modelChoose.addEventListener("click", function () {
     dialogType = type
-    console.log(dialogType, type);
     toChooseModel()
   });
   return modelChoose
 }
-/** 创建对应模型元素 精炼模型*/
-async function createModelRefinerElm() {
-  // 最上层的原始div
-  const baseModel = getElement('refiner_model')
-  const oldModel = baseModel.querySelectorAll('.wrap-inner');
-  if (oldModel && oldModel.length !== 0) {
-    oldModel[0].parentElement.style.display = 'none'
-  }
-
-  // 更换的新的div-父级
-  const componentShowModel = document.createElement('div');
-  componentShowModel.id = "component-show-refiner-model";
-  baseModel.appendChild(componentShowModel);
-  const inputs = oldModel[0].querySelectorAll('input');
-  if (inputs[0] && inputs[0].value !== 'None') {
-    const findItem = modelData.find((i) => i.value === inputs[0].value)
-    const modelChoose = showModelChoose(findItem, REFINER_MODEL)
-    componentShowModel.append(modelChoose);
-  } else {
-    btnNone = noChooseBtnItem(REFINER_MODEL)
-    componentShowModel.append(btnNone);
-  }
-}
-// 选中回显的模型 
 function showOnChooseModelItem(chooseData) {
   // 点击事件的回显的模型 modelChoose的子级
   const chooseItemDiv = document.createElement('div');
@@ -459,64 +521,15 @@ function modelItemContent(params) {
 
   return itemModelContent
 }
-// 没有选中时的 点击按钮
-function noChooseBtnItem(type) {
-  const btnNone = document.createElement('button');
-  btnNone.id = "choose-div-button-" + type;
-  btnNone.style.width = '100px';
-  btnNone.textContent = '点击选择';
-  btnNone.style.padding = "10px";
-  btnNone.style.border = "1px solid #374151";
-  btnNone.style.borderRadius = "8px";
-  btnNone.style.fontSize = "12px";
 
-  // 为最外层元素添加点击事件监听器
-  btnNone.addEventListener("click", function () {
-    dialogType = type
-    toChooseModel()
-  });
-  return btnNone
-}
 
-// 没有选中时默认的lora按钮
-function showLoRaAllWrapNoChoose() {
-  const baseloRaWrap = getElement('LoRA-All-Group')
-  console.log(baseloRaWrap);
-  const oldModel = baseloRaWrap.querySelectorAll('.wrap-inner');
-  for (let index = 0; index < oldModel.length; index++) {
-    const loRasAllWrap = document.createElement('div');
-    loRasAllWrap.id = "component-wrap-lora-item-" + index;
-    // 查找对应input的值
-    oldModel[index].parentElement.parentElement.appendChild(loRasAllWrap);
-    const oldModelInput = oldModel[index].querySelectorAll('input');
-    // 有值就展示回显 没有就 按钮
-    if (oldModelInput[0] && oldModelInput[0].value !== 'None') {
-      const findItem = loraData.find((i) => i.value === oldModelInput[0].value)
-      const modelChoose = showModelChoose(findItem, LORA_ITEM + index)
-      loRasAllWrap.appendChild(modelChoose);
-      oldModel[index].parentElement.parentElement.appendChild(loRasAllWrap);
-    } else {
-      btnNone = noChooseBtnItem(LORA_ITEM + index)
-      loRasAllWrap.append(btnNone);
-    }
-    oldModel[index].parentElement.style.display = 'none'
-  }
-}
 
 
 // 查找 对应的 input 和 需要回显的div  进行回显 === 基础模型
 function setChooseModelValue(baseElId, params, type) {
   const componentShowModel = getElement('component-show-model')
-  // 如果选中了值 点击了删除 点击选择 按钮
-  const btn = getElement('choose-div-button-' + type)
-  if (btn) {
-    btn.parentNode.removeChild(btn);
-  }
-  // 回显选中的模型
-  const element = getElement(baseElId);
-  if (element) {
-    element.parentNode.removeChild(element);
-  }
+  resetBtnItem(type)
+  resetElItem(type)
   if (params.value === 'None') {
     btnNone = noChooseBtnItem(type)
     componentShowModel.append(btnNone);
@@ -532,16 +545,8 @@ function setChooseModelValue(baseElId, params, type) {
 // 查找 对应的 input 和 需要回显的div  进行回显 === 精炼模型
 function setChooseRefinerModelValue(baseElId, params, type) {
   const componentShowModel = getElement('component-show-refiner-model')
-  // 如果选中了值 点击了删除 点击选择 按钮
-  const btn = getElement('choose-div-button-' + type)
-  if (btn) {
-    btn.parentNode.removeChild(btn);
-  }
-  // 回显选中的模型
-  const element = getElement(baseElId);
-  if (element) {
-    element.parentNode.removeChild(element);
-  }
+  resetBtnItem(type)
+  resetElItem(type)
   if (params.value === 'None') {
     btnNone = noChooseBtnItem(type)
     componentShowModel.append(btnNone);
@@ -561,16 +566,8 @@ function setChooseLoraItemValue(params, type) {
   const baseloRaWrap = getElement('LoRA-All-Group')
   const oldModel = baseloRaWrap.querySelectorAll('.wrap-inner');
   const loRasAllWrap = getElement('component-wrap-' + type);
-  // 选中了  删除点击选择按钮
-  const btn = getElement('choose-div-button-' + type)
-  if (btn) {
-    btn.parentNode.removeChild(btn);
-  }
-  // 回显选中的模型
-  const element = getElement('choose-div-' + type);
-  if (element) {
-    element.parentNode.removeChild(element);
-  }
+  resetBtnItem(type)
+  resetElItem(type)
   if (params.value === 'None') {
     btnNone = noChooseBtnItem(type)
     loRasAllWrap.appendChild(btnNone);
@@ -584,6 +581,21 @@ function setChooseLoraItemValue(params, type) {
   hideDialog()
 }
 
+function resetElItem(type) {
+  // 回显选中的模型
+  const element = getElement('choose-div-' + type);
+  if (element) {
+    element.parentNode.removeChild(element);
+  }
+}
+
+function resetBtnItem(type) {
+  // 选中了  删除点击选择按钮
+  const btn = getElement('choose-div-button-' + type)
+  if (btn) {
+    btn.parentNode.removeChild(btn);
+  }
+}
 // 给input 赋值 
 function setInputValue(baseElId, params, index) {
   const baseModel = getElement(baseElId)
@@ -598,9 +610,13 @@ function setInputValue(baseElId, params, index) {
   }
 }
 
-onUiLoaded(async () => {
+function initNewModel() {
   createModelElm()
   createModelRefinerElm()
-  showDialogTask()
   showLoRaAllWrapNoChoose()
+}
+
+onUiLoaded(async () => {
+  showDialogTask()
+  initNewModel()
 })
