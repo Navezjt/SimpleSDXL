@@ -104,9 +104,6 @@ def try_load_deprecated_user_path_config():
 
 try_load_deprecated_user_path_config()
 
-preset = args_manager.args.preset
-theme = args_manager.args.theme
-
 def get_presets():
     preset_folder = 'presets'
     presets = ['initial']
@@ -139,6 +136,7 @@ def try_get_preset_content(preset):
 available_presets = get_presets()
 preset = args_manager.args.preset
 config_dict.update(try_get_preset_content(preset))
+theme = args_manager.args.theme
 
 def get_path_output() -> str:
     """
@@ -210,14 +208,14 @@ def get_dir_or_set_default(key, default_value, as_array=False, make_directory=Fa
     return dp
 
 path_models_root = get_path_models_root()
-paths_checkpoints = get_dir_or_set_default('path_checkpoints', [f'{path_models_root}/checkpoints/'], True)
-paths_loras = get_dir_or_set_default('path_loras', [f'{path_models_root}/loras/'], True)
+paths_checkpoints = get_dir_or_set_default('path_checkpoints', [f'{path_models_root}/checkpoints/', '../models/checkpoints/'], True)
+paths_loras = get_dir_or_set_default('path_loras', [f'{path_models_root}/loras/', '../models/loras/'], True)
 path_embeddings = get_dir_or_set_default('path_embeddings', f'{path_models_root}/embeddings/')
 path_vae_approx = get_dir_or_set_default('path_vae_approx', f'{path_models_root}/vae_approx/')
 path_vae = get_dir_or_set_default('path_vae', f'{path_models_root}/vae/')
 path_upscale_models = get_dir_or_set_default('path_upscale_models', f'{path_models_root}/upscale_models/')
-paths_inpaint = get_dir_or_set_default('path_inpaint', [f'{path_models_root}/inpaint/'], True)
-paths_controlnet = get_dir_or_set_default('path_controlnet', [f'{path_models_root}/controlnet/'], True)
+paths_inpaint = get_dir_or_set_default('path_inpaint', [f'{path_models_root}/inpaint/', '../models/inpaint/'], True)
+paths_controlnet = get_dir_or_set_default('path_controlnet', [f'{path_models_root}/controlnet/', '../models/controlnet/'], True)
 path_clip = get_dir_or_set_default('path_clip', f'{path_models_root}/clip/')
 path_clip_vision = get_dir_or_set_default('path_clip_vision', f'{path_models_root}/clip_vision/')
 path_fooocus_expansion = get_dir_or_set_default('path_fooocus_expansion', f'{path_models_root}/prompt_expansion/fooocus_expansion')
@@ -231,17 +229,19 @@ path_rembg = get_dir_or_set_default('path_rembg', f'{path_models_root}/rembg')
 path_layer_model = get_dir_or_set_default('path_layer_model', f'{path_models_root}/layer_model')
 paths_diffusers = get_dir_or_set_default('path_diffusers', [f'{path_models_root}/diffusers/'], True)
 
-from enhanced.simpleai import simpleai_config
-simpleai_config.path_models_root = path_models_root
-simpleai_config.paths_checkpoints = paths_checkpoints
-simpleai_config.paths_loras = paths_loras
-simpleai_config.path_embeddings = path_embeddings
-simpleai_config.paths_diffusers = paths_diffusers
-simpleai_config.paths_controlnet = paths_controlnet
-simpleai_config.paths_inpaint = paths_inpaint
-simpleai_config.paths_llms = paths_llms
-simpleai_config.path_unet = path_unet
-simpleai_config.path_vae = path_vae
+from enhanced.simpleai import init_modelsinfo
+modelsinfo = init_modelsinfo(path_models_root, dict(
+    checkpoints=paths_checkpoints,
+    loras=paths_loras,
+    embeddings=[path_embeddings],
+    diffusers=paths_diffusers,
+    DIFFUSERS=paths_diffusers,
+    controlnet=paths_controlnet,
+    inpaint=paths_inpaint,
+    llms=paths_llms,
+    unet=[path_unet],
+    vae=[path_vae]
+    ))
 
 def get_config_item_or_set_default(key, default_value, validator, disable_empty_as_none=False, expected_type=None):
     global config_dict, visited_keys
@@ -324,7 +324,7 @@ default_loras = get_config_item_or_set_default(
         or len(y) == 2 and isinstance(y[0], str) and isinstance(y[1], numbers.Number)
         for y in x)
 )
-default_loras = [(y[0], y[1], y[2]) if len(y) == 3 else (True, y[0], y[1]) for y in default_loras]
+default_loras = [(y[0], y[1].replace('\\', os.sep).replace('/', os.sep), y[2]) if len(y) == 3 else (True, y[0].replace('\\', os.sep).replace('/', os.sep), y[1]) for y in default_loras]
 default_max_lora_number = get_config_item_or_set_default(
     key='default_max_lora_number',
     default_value=len(default_loras) if isinstance(default_loras, list) and len(default_loras) > 0 else ads.default['max_lora_number'],
@@ -349,15 +349,18 @@ temp_path_cleanup_on_launch = get_config_item_or_set_default(
 default_engine = get_config_item_or_set_default(
     key='default_engine',
     default_value={},
-    validator=lambda x: isinstance(x, str),
+    validator=lambda x: isinstance(x, dict),
     expected_type=dict
 )
+backend_engine = default_engine.get("backend_engine", "Fooocus")
+
 default_base_model_name = default_model = get_config_item_or_set_default(
     key='default_model',
     default_value='model.safetensors',
     validator=lambda x: isinstance(x, str),
     expected_type=str
-)
+).replace('\\', os.sep).replace('/', os.sep)
+
 previous_default_models = get_config_item_or_set_default(
     key='previous_default_models',
     default_value=[],
@@ -369,7 +372,8 @@ default_refiner_model_name = default_refiner = get_config_item_or_set_default(
     default_value='None',
     validator=lambda x: isinstance(x, str),
     expected_type=str
-)
+).replace('\\', os.sep).replace('/', os.sep)
+
 default_refiner_switch = get_config_item_or_set_default(
     key='default_refiner_switch',
     default_value=0.8,
@@ -403,13 +407,13 @@ default_sample_sharpness = get_config_item_or_set_default(
 default_sampler = get_config_item_or_set_default(
     key='default_sampler',
     default_value=ads.default['sampler_name'],
-    validator=lambda x: x in modules.flags.sampler_list,
+    validator=lambda x: x in modules.flags.sampler_list if backend_engine == 'Fooocus' else modules.flags.comfy_sampler_list,
     expected_type=str
 )
 default_scheduler = get_config_item_or_set_default(
     key='default_scheduler',
     default_value=ads.default['scheduler_name'],
-    validator=lambda x: x in modules.flags.scheduler_list,
+    validator=lambda x: x in modules.flags.scheduler_list if backend_engine == 'Fooocus' else modules.flags.comfy_scheduler_list,
     expected_type=str
 )
 default_vae = get_config_item_or_set_default(
@@ -528,7 +532,7 @@ available_aspect_ratios = get_config_item_or_set_default(
 )
 default_aspect_ratio = get_config_item_or_set_default(
     key='default_aspect_ratio',
-    default_value='1152*896' if '1152*896' in available_aspect_ratios else available_aspect_ratios[0],
+    default_value='1152*896' if '1152*896' in available_aspect_ratios else '1024*1024',
     validator=lambda x: x in available_aspect_ratios,
     expected_type=str
 )
@@ -788,6 +792,13 @@ default_comfyd_active_checkbox = get_config_item_or_set_default(
     validator=lambda x: isinstance(x, bool)
 )
 
+default_image_catalog_max_number = get_config_item_or_set_default(
+    key='default_image_catalog_max_number',
+    default_value=ads.default['image_catalog_max_number'],
+    validator=lambda x: isinstance(x, int),
+    expected_type=int
+)
+
 default_mixing_image_prompt_and_vary_upscale = get_config_item_or_set_default(
     key='default_mixing_image_prompt_and_vary_upscale',
     default_value=ads.default['mixing_image_prompt_and_vary_upscale'],
@@ -808,13 +819,13 @@ reference = ''
 
 default_describe_apply_prompts_checkbox = get_config_item_or_set_default(
     key='default_describe_apply_prompts_checkbox',
-    default_value=True,
+    default_value=False,
     validator=lambda x: isinstance(x, bool),
     expected_type=bool
 )
 default_describe_content_type = get_config_item_or_set_default(
     key='default_describe_content_type',
-    default_value=[modules.flags.describe_type_photo],
+    default_value=[modules.flags.describe_type_photo, modules.flags.describe_type_anime],
     validator=lambda x: all(k in modules.flags.describe_types for k in x),
     expected_type=list
 )
@@ -866,6 +877,7 @@ possible_preset_keys = {
     "default_mixing_image_prompt_and_inpaint": "mixing_image_prompt_and_inpaint",
     "default_backfill_prompt": "backfill_prompt",
     "default_translation_methods": "translation_methods",
+    "default_image_catalog_max_number": "image_catalog_max_number",
     "styles_definition": "styles_definition",
     "instruction": "instruction",
     "reference": "reference",
@@ -879,6 +891,7 @@ allow_missing_preset_key = [
     "styles_definition",
     "instruction",
     "reference",
+    "previous_default_models",
     ]
 
 REWRITE_PRESET = False
@@ -889,23 +902,6 @@ if REWRITE_PRESET and isinstance(args_manager.args.preset, str):
         json.dump({k: config_dict[k] for k in possible_preset_keys}, json_file, indent=4)
     print(f'Preset saved to {save_path}. Exiting ...')
     exit(0)
-
-
-def add_ratio(x):
-    a, b = x.replace('*', ' ').split(' ')[:2]
-    a, b = int(a), int(b)
-    g = math.gcd(a, b)
-    c, d = a // g, b // g
-    if (a, b) == (576, 1344):
-        c, d = 9, 21
-    elif (a, b) == (1344, 576):
-        c, d = 21, 9
-    elif (a, b) == (768, 1280):
-        c, d = 9, 15
-    elif (a, b) == (1280, 768):
-        c, d = 15, 9
-    return f'{a}×{b} <span style="color: grey;"> \U00002223 {c}:{d}</span>'
-
 
 
 default_aspect_ratio = modules.flags.default_aspect_ratios['SDXL']
@@ -972,7 +968,7 @@ wildcard_filenames = []
 
 def get_model_filenames(folder_paths, extensions=None, name_filter=None):
     if extensions is None:
-        extensions = ['.pth', '.ckpt', '.bin', '.safetensors', '.fooocus.patch', '.sft']
+        extensions = ['.pth', '.ckpt', '.bin', '.safetensors', '.fooocus.patch', '.gguf']
     files = []
 
     if not isinstance(folder_paths, list):
@@ -983,14 +979,25 @@ def get_model_filenames(folder_paths, extensions=None, name_filter=None):
     return files
 
 
-def update_files():
-    global model_filenames, lora_filenames, vae_filenames, wildcard_filenames, available_presets
-    model_filenames = get_model_filenames(paths_checkpoints)
-    lora_filenames = get_model_filenames(paths_loras)
-    vae_filenames = get_model_filenames(path_vae)
+def get_base_model_list(engine='Fooocus', task_method=None):
+    global modelsinfo
+    file_filter = modules.flags.model_file_filter.get(engine, [])
+    base_model_list = modelsinfo.get_model_names('checkpoints', file_filter)
+    if engine in ['Fooocus', 'Comfy']:
+        base_model_list = modelsinfo.get_model_names('checkpoints', modules.flags.model_file_filter['Fooocus'], reverse=True)
+    elif task_method == 'flux_base2_gguf':
+        base_model_list = [f for f in base_model_list if ("hyp8" in f or "hyp16" in f) and f.endswith("gguf")]
+    return base_model_list
+
+def update_files(engine='Fooocus', task_method=None):
+    global modelsinfo, model_filenames, lora_filenames, vae_filenames, wildcard_filenames, available_presets
+    modelsinfo.refresh_from_path()
+    model_filenames = get_base_model_list(engine, task_method)
+    lora_filenames = modelsinfo.get_model_names('loras')
+    vae_filenames = modelsinfo.get_model_names('vae')
     wildcard_filenames = get_files_from_folder(path_wildcards, ['.txt'])
     available_presets = get_presets()
-    return
+    return model_filenames, lora_filenames, vae_filenames
 
 
 def downloading_inpaint_models(v):
@@ -1179,15 +1186,15 @@ def downloading_superprompter_model():
 
 def downloading_sd3_medium_model():
     load_file_from_url(
-        url='https://huggingface.co/metercai/SimpleSDXL2/resolve/main/sd3_medium_incl_clips.safetensors',
+        url='https://huggingface.co/metercai/SimpleSDXL2/resolve/main/sd3m/sd3_medium_incl_clips_t5xxlfp8.safetensors',
         model_dir=paths_checkpoints[0],
-        file_name='sd3_medium_incl_clips.safetensors'
+        file_name='sd3_medium_incl_clips_t5xxlfp8.safetensors'
     )
-    return os.path.join(paths_checkpoints[0], 'sd3_medium_incl_clips.safetensors')
+    return os.path.join(paths_checkpoints[0], 'sd3_medium_incl_clips_t5xxlfp8.safetensors')
 
 def downloading_base_sd15_model():
     load_file_from_url(
-        url='https://huggingface.co/metercai/SimpleSDXL2/resolve/main/realisticVisionV60B1_v51VAE.safetensors',
+        url='https://huggingface.co/metercai/SimpleSDXL2/resolve/main/ckpt/realisticVisionV60B1_v51VAE.safetensors',
         model_dir=paths_checkpoints[0],
         file_name='realisticVisionV60B1_v51VAE.safetensors'
     )
@@ -1202,5 +1209,3 @@ def downloading_hydit_model():
     return os.path.join(paths_checkpoints[0], 'hunyuan_dit_1.2.safetensors')
 
 update_files()
-from enhanced.simpleai import refresh_models_info 
-refresh_models_info()

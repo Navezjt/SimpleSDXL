@@ -12,8 +12,8 @@ import modules.config
 import modules.sdxl_styles
 from modules.flags import MetadataScheme, Performance, Steps, task_class_mapping, get_taskclass_by_fullname, default_class_params, scheduler_list, sampler_list
 from modules.flags import SAMPLERS, CIVITAI_NO_KARRAS
-from modules.util import quote, unquote, extract_styles_from_prompt, is_json, get_file_from_folder_list, sha256
-from enhanced.simpleai import models_info, models_info_file
+from modules.util import quote, unquote, extract_styles_from_prompt, is_json, sha256
+from shared import modelsinfo
 import enhanced.all_parameters as ads
 from modules.hash_cache import sha256_from_cache
 
@@ -24,7 +24,24 @@ re_imagesize = re.compile(r"^(\d+)x(\d+)$")
 get_layout_visible_inter = lambda x,y,z:gr.update(visible=x not in y, interactive=x not in z)
 get_layout_toggle_visible_inter = lambda x,y,z: gr.update(visible=x not in y, interactive=x not in z) if x not in z else gr.update(value=x not in z, visible=x not in y, interactive=x not in z)
 get_layout_choices_visible_inter = lambda l,x,y,z:gr.update(choices=l, visible=x not in y, interactive=x not in z)
+get_layout_empty_visible_inter = lambda x,y,z: gr.update(visible=x not in y, interactive=x not in z) if x not in z else gr.update(value='', visible=x not in y, interactive=x not in z)
 
+def get_layout_visible_inter_loras(y,z,max_number):
+    x = 'loras'
+    y1 = max_number if x in y else -1 
+    for key in y:
+        if '-' in key and x==key.split('-')[0]:
+            y1 = int(key.split('-')[1])
+            break
+    z1 = max_number if x in z else -1
+    for key in z:
+        if '-' in key and x==key.split('-')[0]:
+            z1 = int(key.split('-')[1])
+            break
+    results = []
+    for i in range(max_number):
+        results += [gr.update(visible= i+y1<max_number or y1<0, interactive= i+z1<max_number or z1<0)] * 3
+    return results
 
 def switch_layout_template(presetdata: dict | str, state_params, preset_url=''):
     presetdata_dict = presetdata
@@ -32,30 +49,34 @@ def switch_layout_template(presetdata: dict | str, state_params, preset_url=''):
         presetdata_dict = json.loads(presetdata)
     assert isinstance(presetdata_dict, dict)
     enginedata_dict = presetdata_dict.get('engine', {})
-    #print(f'enginedata:{enginedata_dict}')
-    template_engine = get_taskclass_by_fullname(presetdata_dict.get('Backend Engine', presetdata_dict.get('backend_engine', task_class_mapping['Fooocus'])))
-    template_engine = enginedata_dict.get('backend_engine', template_engine)
+    template_engine = get_taskclass_by_fullname(presetdata_dict.get('Backend Engine', presetdata_dict.get('backend_engine', 
+        task_class_mapping[enginedata_dict.get('backend_engine', 'Fooocus')])))
     default_params = default_class_params[template_engine]
     visible = enginedata_dict.get('disvisible', default_params.get('disvisible', default_class_params['Fooocus']['disvisible']))
     inter = enginedata_dict.get('disinteractive', default_params.get('disinteractive', default_class_params['Fooocus']['disinteractive']))
     sampler_list = enginedata_dict.get('available_sampler_name', default_params.get('available_sampler_name', default_class_params['Fooocus']['available_sampler_name']))
     scheduler_list = enginedata_dict.get('available_scheduler_name', default_params.get('available_scheduler_name', default_class_params['Fooocus']['available_scheduler_name']))
-    
-    params_backend  = enginedata_dict.get('backend_params', default_params.get('backend_params', default_class_params['Fooocus']['backend_params']))
+
+    params_backend  = enginedata_dict.get('backend_params', modules.flags.get_engine_default_backend_params(template_engine))
     params_backend.update({'backend_engine': template_engine})
+    task_method = params_backend.get('task_method', None)
+    base_model_list = modules.config.get_base_model_list(template_engine, task_method)
+
     results = [params_backend]
     results.append(get_layout_visible_inter('performance_selection', visible, inter))
     results.append(get_layout_choices_visible_inter(scheduler_list, 'scheduler_name', visible, inter))
     results.append(get_layout_choices_visible_inter(sampler_list, 'sampler_name', visible, inter))
-    results.append(get_layout_visible_inter('input_image_checkbox', visible, inter))
+    results.append(get_layout_toggle_visible_inter('input_image_checkbox', visible, inter))
     results.append(get_layout_toggle_visible_inter('enhance_checkbox', visible, inter))
-    results.append(get_layout_visible_inter('base_model', visible, inter))
+    results.append(get_layout_choices_visible_inter(base_model_list, 'base_model', visible, inter))
     results.append(get_layout_visible_inter('refiner_model', visible, inter))
     results.append(get_layout_visible_inter('overwrite_step', visible, inter))
     results.append(get_layout_visible_inter('guidance_scale', visible, inter))
+    results.append(get_layout_empty_visible_inter('negative_prompt', visible, inter))
     results.append(gr.update(visible=True if 'blank.inc.html' not in preset_url else False))
-    for i in range(modules.config.default_max_lora_number):
-        results += [get_layout_visible_inter('loras', visible, inter)] * 3
+    results += get_layout_visible_inter_loras(visible, inter, modules.config.default_max_lora_number)
+    #for i in range(modules.config.default_max_lora_number):
+    #    results += [get_layout_visible_inter('loras', visible, inter)] * 3
 
 
     #[output_format, inpaint_advanced_masking_checkbox, mixing_image_prompt_and_vary_upscale, mixing_image_prompt_and_inpaint, backfill_prompt, translation_methods, input_image_checkbox, state_topbar]
@@ -67,7 +88,9 @@ def switch_layout_template(presetdata: dict | str, state_params, preset_url=''):
     results.append(update_value_if_existed("mixing_image_prompt_and_inpaint"))
     results.append(update_value_if_existed("backfill_prompt"))
     results.append(update_value_if_existed("translation_methods"))
-    results.append(False if template_engine!='Fooocus' else update_value_if_existed("input_image_checkbox"))
+    results.append(False if template_engine not in ['Fooocus', 'Comfy'] else update_value_if_existed("input_image_checkbox"))
+    if 'image_catalog_max_number' in presetdata_dict:
+        state_params.update({'__max_catalog': presetdata_dict['image_catalog_max_number']})
     results.append(state_params)
 
     return results
@@ -79,7 +102,7 @@ def load_parameter_button_click(raw_metadata: dict | str, is_generating: bool, i
     if isinstance(raw_metadata, str):
         loaded_parameter_dict = json.loads(raw_metadata)
     assert isinstance(loaded_parameter_dict, dict)
-    
+   
     results = [True] if len(loaded_parameter_dict) > 0 else [gr.update()]
 
     get_image_number('image_number', 'Image Number', loaded_parameter_dict, results)
@@ -123,7 +146,6 @@ def load_parameter_button_click(raw_metadata: dict | str, is_generating: bool, i
 
     for i in range(modules.config.default_max_lora_number):
         get_lora(f'lora_combined_{i + 1}', f'LoRA {i + 1}', loaded_parameter_dict, results, performance_filename)
-
 
     return results
 
@@ -195,7 +217,7 @@ def get_resolution(key: str, fallback: str | None, source_dict: dict, results: l
     try:
         h = source_dict.get(key, source_dict.get(fallback, default))
         width, height = eval(h)
-        formatted = modules.config.add_ratio(f'{width}*{height}')
+        formatted = modules.flags.add_ratio(f'{width}*{height}')
         engine = get_taskclass_by_fullname(source_dict.get('Backend Engine', source_dict.get('backend_engine', task_class_mapping['Fooocus']))) 
         if 'engine' in source_dict:
             engine = source_dict['engine'].get('backend_engine', engine)
@@ -315,30 +337,16 @@ def get_lora(key: str, fallback: str | None, source_dict: dict, results: list, p
         results.append('None')
         results.append(1)
 
-def get_loras_simple(loras: dict, results: list):
-    nums = len(loras) if len(loras) <= modules.config.default_max_lora_number else modules.config.default_max_lora_number
-    loras = loras[:nums]
-    for n, w in loras:
-        results.append(True)
-        results.append(n)
-        results.append(float(w))
-    if nums < modules.config.default_max_lora_number:
-        for i in range(modules.config.default_max_lora_number - nums):
-            results.append(True)
-            results.append('None')
-            results.append(1)
- 
-
 
 def get_sha256(filepath):
     global hash_cache
     if not os.path.isfile(filepath):
         return ''
     if filepath not in hash_cache:
-        if filepath in models_info_file:
-            hash_cache[filepath] = models_info[models_info_file[filepath]]['muid']
-        else:
-            hash_cache[filepath] = sha256(filepath)
+        filehash = modelsinfo.get_file_muid(filepath)
+        if not filehash:
+            filehash = sha256(filepath)
+        hash_cache[filepath] = filehash
     return hash_cache[filepath]
 
 
@@ -353,6 +361,10 @@ def parse_meta_from_preset(preset_content):
             if settings_key in items:
                 loras = items[settings_key]
             for index, lora in enumerate(loras[:modules.config.default_max_lora_number]):
+                if len(lora) == 2:
+                    lora[0] = lora[0].replace('\\', os.sep).replace('/', os.sep)
+                elif  len(lora) == 3:
+                    lora[1] = lora[1].replace('\\', os.sep).replace('/', os.sep)
                 preset_prepared[f'lora_combined_{index + 1}'] = ' : '.join(map(str, lora))
         elif settings_key == "default_aspect_ratio":
             if settings_key in items and items[settings_key] is not None:
@@ -370,6 +382,8 @@ def parse_meta_from_preset(preset_content):
 
         if settings_key == "default_styles" or settings_key == "default_aspect_ratio":
             preset_prepared[meta_key] = str(preset_prepared[meta_key])
+        if settings_key in ["default_model", "default_refiner"]:
+            preset_prepared[meta_key] = preset_prepared[meta_key].replace('\\', os.sep).replace('/', os.sep)
 
     return preset_prepared
 
@@ -411,19 +425,19 @@ class MetadataParser(ABC):
         self.base_model_name = Path(base_model_name).stem
 
         if base_model_name not in ['', 'None']:
-            base_model_path = get_file_from_folder_list(base_model_name, modules.config.paths_checkpoints)
-            self.base_model_hash = sha256_from_cache(base_model_path)
+            base_model_path = modelsinfo.get_model_filepath('checkpoints', base_model_name)
+            self.base_model_hash = modelsinfo.get_file_muid(base_model_path)
 
         if refiner_model_name not in ['', 'None']:
             self.refiner_model_name = Path(refiner_model_name).stem
-            refiner_model_path = get_file_from_folder_list(refiner_model_name, modules.config.paths_checkpoints)
-            self.refiner_model_hash = sha256_from_cache(refiner_model_path)
+            refiner_model_path = modelsinfo.get_model_filepath('checkpoints', refiner_model_name)
+            self.refiner_model_hash = modelsinfo.get_file_muid(refiner_model_path)
 
         self.loras = []
         for (lora_name, lora_weight) in loras:
             if lora_name != 'None':
-                lora_path = get_file_from_folder_list(lora_name, modules.config.paths_loras)
-                lora_hash = sha256_from_cache(lora_path)
+                lora_path = modelsinfo.get_model_filepath('loras', lora_name)
+                lora_hash = modelsinfo.get_file_muid(lora_path)
                 self.loras.append((Path(lora_name).stem, lora_weight, lora_hash))
         self.vae_name = Path(vae_name).stem
         if styles_definition != 'None':
@@ -640,6 +654,7 @@ class FooocusMetadataParser(MetadataParser):
         return MetadataScheme.FOOOCUS
 
     def to_json(self, metadata: dict) -> dict:
+
         for key, value in metadata.items():
             if value in ['', 'None']:
                 continue
@@ -702,12 +717,17 @@ class SIMPLEMetadataParser(MetadataParser):
 
 
     def to_json(self, metadata: dict) -> dict:
-
+        engine = get_taskclass_by_fullname(metadata.get('Backend Engine', metadata.get('backend_engine', task_class_mapping['Fooocus'])))
+        model_filenames = modules.config.get_base_model_list(engine)
         for key, value in metadata.items():
             if value in ['', 'None']:
+                if key in ['base_model', 'refiner_model', 'Base Model', 'Refiner Model']:
+                    metadata[key] = 'None'
                 continue
             if key in ['base_model', 'refiner_model', 'Base Model', 'Refiner Model']:
-                metadata[key] = self.replace_value_with_filename(key, value, modules.config.model_filenames)
+                metadata[key] = self.replace_value_with_filename(key, value, model_filenames)
+                if metadata[key]=='None':
+                    print(f'[MetaParser] ⚠️  WARNING! The model is not available in the local: {value}.')
             elif key.startswith('LoRA '):
                 metadata[key] = self.replace_value_with_filename(key, value, modules.config.lora_filenames)
             elif key in ['vae', 'VAE']:
@@ -755,7 +775,7 @@ class SIMPLEMetadataParser(MetadataParser):
             path = Path(filename)
             if key.startswith('LoRA '):
                 name, weight = value.split(' : ')
-                if name == path.stem:
+                if Path(name).stem == path.stem or name == path.stem:
                     return f'{filename} : {weight}'
             elif Path(value).stem == path.stem or value == path.stem:
                 return filename
@@ -799,6 +819,9 @@ def read_info_from_image(file) -> tuple[str | None, MetadataScheme | None]:
             parameters = params_lora_fixed(parameters)
 
     try:
+        if metadata_scheme == 'fooocus':
+            metadata_scheme = 'simple'
+            parameters.update({'metadata_scheme': 'simple'})
         metadata_scheme = MetadataScheme(metadata_scheme)
     except ValueError:
         metadata_scheme = None
@@ -809,7 +832,6 @@ def read_info_from_image(file) -> tuple[str | None, MetadataScheme | None]:
 
         if isinstance(parameters, str):
             metadata_scheme = MetadataScheme.A1111
-
     return parameters, metadata_scheme
 
 def params_lora_fixed(parameters):
