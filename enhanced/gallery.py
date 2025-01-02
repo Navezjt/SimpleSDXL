@@ -21,24 +21,29 @@ images_ads = {}
 image_types = ['.png', '.jpg', '.jpeg', '.webp']
 output_images_regex = re.compile(r'\d{4}-\d{2}-\d{2}')
 
-def refresh_output_list(max_per_page):
+def refresh_output_list(max_per_page, max_catalog):
     global image_types
 
     listdirs = [f for f in os.listdir(config.path_outputs) if output_images_regex.findall(f) and os.path.isdir(os.path.join(config.path_outputs,f))]
     if listdirs is None:
         return None
     listdirs1 = listdirs.copy()
+    total_nums = 0
     for index in listdirs:
         path_gallery = os.path.join(config.path_outputs, index)
         nums = len(util.get_files_from_folder(path_gallery, image_types, None))
+        total_nums += nums
         if nums > max_per_page:
             max_page_no = math.ceil(nums/max_per_page)
             for i in range(1,max_page_no+1):
                 listdirs1.append("{}/{}".format(index, str(i).zfill(len(str(max_page_no)))))
             listdirs1.remove(index)
     output_list = sorted([f[2:] for f in listdirs1], reverse=True)
-    print(f'[Gallery] Refresh_output_catalog: loaded {len(output_list)} images_catalogs.')
-    return output_list
+    pages = len(output_list)
+    display_max_pages = max_catalog
+    print(f'[Gallery] Refresh_output_catalog: A total of {total_nums} images and {pages} pages, displaying the latest {pages if pages<display_max_pages else display_max_pages} pages.')
+    output_list = output_list[:display_max_pages]
+    return output_list, total_nums, pages
 
 
 def images_list_update(choice, state_params):
@@ -71,9 +76,9 @@ def select_gallery(choice, state_params, backfill_prompt, evt: gr.SelectData):
     result = get_images_prompt(choice, evt.index, state_params["__max_per_page"], True)
     #print(f'[Gallery] Selected_gallery: selected index {evt.index} of {choice} images_list:{result["Filename"]}.')
     if backfill_prompt and 'Prompt' in result:
-        return [gr.update(value=toolbox.make_infobox_markdown(result)), gr.update(value=result["Prompt"]), gr.update(value=result["Negative Prompt"])] + [gr.update(visible=False)] * 4 + [state_params]
+        return [gr.update(value=toolbox.make_infobox_markdown(result, state_params['__theme'])), gr.update(value=result["Prompt"]), gr.update(value=result["Negative Prompt"])] + [gr.update(visible=False)] * 4 + [state_params]
     else:
-        return [gr.update(value=toolbox.make_infobox_markdown(result)), gr.update(), gr.update()] + [gr.update(visible=False)] * 4 + [state_params]
+        return [gr.update(value=toolbox.make_infobox_markdown(result, state_params['__theme'])), gr.update(), gr.update()] + [gr.update(visible=False)] * 4 + [state_params]
 
 def select_gallery_progress(state_params, evt: gr.SelectData):
     #if "__output_list" not in state_params.keys():
@@ -81,7 +86,7 @@ def select_gallery_progress(state_params, evt: gr.SelectData):
     state_params.update({"note_box_state": ['',0,0]})
     state_params.update({"prompt_info": [None, evt.index]})
     result = get_images_prompt(state_params["__output_list"][0], evt.index, state_params["__max_per_page"])
-    return [gr.update(value=toolbox.make_infobox_markdown(result), visible=False)] + [gr.update(visible=False)] * 4 + [state_params]
+    return [gr.update(value=toolbox.make_infobox_markdown(result, state_params['__theme']), visible=False)] + [gr.update(visible=False)] * 4 + [state_params]
 
 
 def get_images_from_gallery_index(choice, max_per_page):

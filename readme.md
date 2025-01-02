@@ -1,8 +1,14 @@
 ## SimpleSDXL2 - 最强中文创意生图，6G显存玩转混元、可图、SD3m和Flux！
-<div align=center><img src="https://github.com/user-attachments/assets/75786e42-60ec-4e02-b802-51bd82cff634"></div>
-    
+<div align=center><img src="https://github.com/user-attachments/assets/98715a4d-9f4a-4846-ae62-eb8d69793d31"></div>
+
+### 🚀 飞书wiki: [《SimpleSDXL创意生图应用指南》](https://acnmokx5gwds.feishu.cn/wiki/QK3LwOp2oiRRaTkFRhYcO4LonGe), 包括如何快速下载、安装和运行，如何操作进行创意出图，在不同应用场景下如何使用SimpleSDXL等等。
+
+### 🚀 B站视频推荐：[6G显存玩转Flux](https://www.bilibili.com/video/BV1KJWreyEuU) :  https://www.bilibili.com/video/BV1KJWreyEuU 
+
+
 ## 🔔 最新更新 / Update
-- [2024.08.20] <b>新架构进一步优化，提升在Windows环境的兼容性，压缩Fooocus和Comfy后端切换的资源消耗。优化支持最低6G显存的Flux模型出图，提供质量优先的Fluxdev和速度优先的Flux+两个预置包，并可根据系统资源自动适配。同步升级主线v2.5.5，优化增强修图UI，更符合Fooocus交互习惯。</b>
+- [2024-09-16] <b>解锁Flux的lora和可图lora。自动修图开关移到增强修图标签内。添加提示面板开关，可点击触发批量通配符面板。反推提示词和图片参数提取两个标签移入参数设置栏。添加基于预置包的基础模型过滤功能。修复Comfyd引擎的跳过和中断逻辑bug。优化预置包参数和预置包导航。Flux模型自动适配硬件环境。优选Hyp8Q5KM模型，支持Flux Lora，兼具速度与质量的平衡。新增两个无缝贴图的预置包。升级comfyd到最新版。优化下载安装和启动流程，强制基础包检测，并提供模型包安装脚本。</b>
+- [2024.08.20] 新架构进一步优化，提升在Windows环境的兼容性，压缩Fooocus和Comfy后端切换的资源消耗。优化支持最低6G显存的Flux模型出图，提供质量优先的Fluxdev和速度优先的Flux+两个预置包，并可根据系统资源自动适配。同步升级主线v2.5.5，优化增强修图UI，更符合Fooocus交互习惯。
 - [2024.07.31] 优化了新架构，更稳定，更快速。新增对快手可图模型的支持，使SimpleSDXL2除SDXL外，以6G显卡显存同时支持: 小马v6/Playground-v2.5/SD3m/混元/可图等多种模型出图，适用更多场景。同步主线v2.5.2，并对修图界面进行优化和适配，使之更容易被中文用户理解和使用。
 - [2024.06.30] 扩展架构，新增Comfy后端，全新升级SimpleSDXL2。支持SDXL、混元、SD3和Playground-v2.5本地模型，最低6G显卡内存可用，保持Fooocus简洁、高效和稳定的出图风格。新增融图打光模块，可自主生成前景及蒙版，可自动抠取产品或人物图片切换场景进行融合。升级OBP一键提示词到最新版。UI整体优化。
 - [2024.05.28] 同步主线升级到v2.4.3，新增nsfw过滤等功能。
@@ -11,24 +17,7 @@
 <b>重要：如果项目给您带来了便利和价值，不要吝惜加颗星"⭐️"，促进项目更好的发展！😜<br>
 Note: Please don't forget to give us a star if you like this project. Thanks! 😜</b>
 
-## Windows安装使用
-### 下载：(新用户至少要下载程序包和基本模型包)
-- 程序包: 运行环境和应用程序, [SimpleSDXL2_win.exe.7z0820 (2G)](https://hf-mirror.com/metercai/SimpleSDXL2/resolve/main/SimpleSDXL2_win.exe.7z0820)
-- 基本模型包: 缺省出图模型和所有辅助模型，包含SD3基础版, [models_base_0731.zip (49G)](https://hf-mirror.com/metercai/SimpleSDXL2/resolve/main/models_base_0731.zip)
-- 扩展模型包: 预置导航上的其他出图模型，包括写实/动漫(V500)/小马v6/Playground-v2.5/混元1.2/可图, [models_ckpt_0731.zip (47G)](https://hf-mirror.com/metercai/SimpleSDXL2/resolve/main/models_ckpt_0731.zip)
-- Flux模型: 6G和8G显存可下载: [flux1-dev-bnb-nf4-v2.safetensors](https://hf-mirror.com/lllyasviel/flux1-dev-bnb-nf4/resolve/main/flux1-dev-bnb-nf4-v2.safetensors) 和 [flux1-schnell-bnb-nf4.safetensors](https://hf-mirror.com/silveroxides/flux1-nf4-weights/resolve/main/flux1-schnell-bnb-nf4.safetensors)。高配显卡可下载Flux全量模型和增补包: [flux1-dev.safetensors](https://hf-mirror.com/metercai/SimpleSDXL2/resolve/main/flux1-dev.safetensors)，[flux1-schnell.safetensors](https://hf-mirror.com/metercai/SimpleSDXL2/resolve/main/flux1-schnell.safetensors)，Flux全量模型所需增补包[models_flux1_fp16_simpleai_patch.zip](https://hf-mirror.com/metercai/SimpleSDXL2/resolve/main/models_flux1_fp16_simpleai_patch.zip)
-### 安装：
-- 新建空目录名称为: SimpleAI，注意完整路径名上不能包含中文和空格。如果已经安装过正式版的用户，此步可忽略。
-- 将程序包复制到SimpleAI目录内，<b>去掉`.7z0820`的文件名尾缀</b>，双击exe文件运行，自解压到当前目录。新版本严禁与旧版本混装。
-- 复制基本模型包models_base_0731.zip和扩展模型包models_ckpt_0731.zip到SimpleAI目录下，分别双击文件解压到本目录，同名覆盖在同一目录下：SimpleModels，即模型根目录。如果已经安装过正式版的用户，此步可忽略。
-- 将下载的flux1-dev-bnb-nf4-v2.safetensors、flux1-schnell-bnb-nf4.safetensors或flux1-dev.safetensors、flux1-schnell.safetensors模型文件放入SimpleModels下的checkpoints目录下。如果需要运行Flux全量模型，需在SimpleAI目录下解压models_flux1_fp16_simpleai_patch.zip，覆盖到SimpleModels下，主要是补齐clip和vae目录下的模型。
-- 在SimpleAI目录下新建出图目录，名称为: outputs ，此目录将保存所有出图的图片。如果已经安装过正式版的用户，此步可忽略。
-### 运行
-- 进入SimpleSDXL2_win_0820目录，双击启动脚本 run_SimpleSDXL.bat，完成第一次运行。
-- 第一次运行后，在SimpleSDXL目录下会生成 config.txt文件，可以自行修改和添加模型路径。
-- 模型根目录和出图目录可以自定义，但需用记事本打开启动脚本文件run_SimpleSDXL.bat，自行修改。
-<img width="600" align=center src="https://github.com/user-attachments/assets/4c039129-b59f-47ef-825b-863c5ea24705">
-
+## 安装下载和使用，参见wiki: [《SimpleSDXL创意生图应用指南》](https://acnmokx5gwds.feishu.cn/wiki/QK3LwOp2oiRRaTkFRhYcO4LonGe), 包括如何快速下载、安装和运行，如何操作进行创意出图，在不同应用场景下如何使用SimpleSDXL等等。
 
 ### 如果对旧版情有独钟，可选择不升级，运行旧版
 - SimpleSDXL1独立分支的完全包，含环境、程序和默认模型，后续不增功能仅修bug :  [SimpleSDXL1_win64_all.zip (30G)](https://hf-mirror.com/metercai/SimpleSDXL2/resolve/main/SimpleSDXL1_win64_all.zip)
@@ -107,36 +96,8 @@ Enhanced parameter management for instant viewing and embedding of images, and c
 - [ ] **算力云化** 前后端分离，本机的出图算力后端可支持远程的前端出图调用，实现前端操控和出图计算的分离，让无GPU卡设备也可使用SDXL模型出图。
 - [x] **主线同步** SimpleSDXL的增强代码保持良好的结构，与Fooocus主线版本保持良好的兼容性和扩展性，可以及时同步主线的新增能力和Bug修复。
 
-## Linux安装使用 / Install & Usage
-### 安装 Anaconda 
 
-    curl -O https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh 
-    bash Miniconda3-latest-Linux-x86_64.sh
-### 安装应用环境
-
-    mkdir SimpleAI;cd SimpleAI
-    git clone https://github.com/metercai/SimpleSDXL.git
-    #国内用户可换用gitee源: https://gitee.com/metercai/SimpleSDXL.git
-    wget https://hf-mirror.com/metercai/SimpleSDXL2/resolve/main/models_base_0731.zip
-    wget https://hf-mirror.com/metercai/SimpleSDXL2/resolve/main/models_ckpt_0731.zip
-    unzip -d -o models_base_0731.zip 
-    unzip -d -o models_ckpt_0731.zip
-    mkdir outputs
-    conda env create -f environment.yaml
-    conda activate simpleai
-    pip install packaging pygit2==1.12.2 -i https://pypi.tuna.tsinghua.edu.cn/simple
-
-### 启动服务
-
-    cd SimpleSDXL
-    python entry_with_update.py --models-root ../SimpleModels --output-path ../outputs
-    # 云端部署可以配置： ip, port, webroot 等参数
-    # python entry_with_update.py --listen 0.0.0.0 --port 8889 --webroot /sdxl --preset realistic
-    # Enter English UI : --language en
-    # python entry_with_update.py --language en
-
-
-## 在线交流：qq群：938075852  新年新版本，需要增加哪些新功能，进群畅聊
+## 在线交流：qq群：938075852  如何使用，有哪些新需求，进群畅聊
 <div align=center><img width="250" src="https://github.com/metercai/SimpleSDXL/assets/5652458/28f8c604-79eb-467d-956c-b9137c784194"></div>
 
 ## Star History
