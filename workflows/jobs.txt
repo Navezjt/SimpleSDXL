@@ -1,0 +1,532 @@
+Abbot
+Abjurer
+Acrobat
+Activist
+Actor
+Actress
+Adventurer
+Air traffic controller
+Airbender
+Alchemist
+Amazone
+Android
+Angel
+Anthropologist
+Apothecary
+Arcane trickster
+Arcanist
+Archeologist
+Architect
+Archmage
+Artisan
+Artist
+Assassin
+Astronaut
+Astronomer
+Athlete
+Attacker
+Author
+Avatar
+Bagpiper
+Baker
+Baker
+Ballerina
+Ballerino
+Ballroom Dancer
+Barbarian
+Barber
+Bard
+Barista
+Baron
+Baroness
+Base jumper
+Baseball Player
+Beast tamer
+Beastmaster
+Beekeeper
+Belly dancer
+Berseker
+bimbo
+Biologist
+Bishop
+Blacksmith
+Bladesinger
+Blood mage
+Bohemian
+Bollywood Dancer
+Bond Girl
+Boss
+Bookbinder
+Botanist
+Bounty hunter
+Brewer
+Brewer
+Bride
+Brigadier General
+Businessperson
+Butcher
+Butcher
+Calligrapher
+Canon
+Captain
+Cardinal
+Carpenter
+Cartographer
+Caveman
+Cavewoman
+Ceasar
+Celestial
+CEO
+Chancellor
+Chaos mage
+Chaplain
+Chauffeur
+Cheerleader
+Chef
+Chemist
+Chimney Sweep
+Chronicler
+Chronomancer
+Citizen
+Cleric
+Clerk
+Cloaked figure
+Clockmaker
+Clown
+College student
+Colonel
+Command Sergeant Major
+Commander
+Concubine
+Confessor
+Conquistador
+Construction worker
+Construction worker
+Cook
+Cooper
+Corporal
+Cosplayer
+Costume designer
+Count
+Countess
+Court jester
+Cowboy
+Cowgirl
+Crusader
+Cryptographer
+Curate
+Cyborg
+Dance teacher
+Dancer
+Dandy
+Dark Knight
+Dark Souls Boss
+Deacon
+Death knight
+Death knight
+Deep-Sea Diver
+Defender
+Demon hunter
+Demon Hunter
+Designer
+Detective
+Diplomat
+Disney Princess
+DJ
+Dockworker
+Doctor
+Doll
+Dragon knight
+Dragon rider
+Dragon slayer
+Dreamweaver
+Druid
+Duchess
+Duke
+Earthbender
+Ecologist
+Economist
+Elder
+Elemental mage
+Elementalist
+Emergency medical technician
+Emperor
+Empress
+Enchanter
+Enforcer
+Engineer
+Engineer
+Engineer
+Entomologist
+Entrepreneur
+Environmentalist
+Envoy
+Eskimo
+Executioner
+Exorcist
+Explorer
+Falconer
+Fallen Paladin
+Farmer
+Farrier
+Fashion designer
+Fashion model
+Fashionista
+Fast Food Employee
+femme fatale
+Fencer
+Feudal lord
+Fighter
+Fighting game character
+Filmmaker
+Financial analyst
+Fire mage
+Firebender
+Firefighter
+First Lieutenant
+First Sergeant
+Fisherman
+Flamengo Dancer
+Florist
+Footman
+Free Spirit
+Friar
+Frost mage
+Gallery owner
+Gangster
+Gardener
+Geek
+Geek Squad Employee
+Geisha
+General
+Gentleman
+Geographer
+Geologist
+Geomancer
+Ghost hunter
+Ghost
+Gladiator
+Glassblower
+Goldsmith
+Gondolier
+Grave robber
+Groom
+Guardian
+Gunner
+Gunnery Sergeant
+Guru
+Gypsy
+Hacker
+Harbinger
+Harajuku Girl
+Harpist
+Healer
+Henchman
+Herald
+Herbalist
+Highland Scotsman
+Highway Patrol Officer
+Hippie
+Hipster
+Historian
+Hillbilly
+Hooded figure
+Humanitarian
+hunk
+Hunter
+Ice Cream Vendor
+Ice king
+Ice queen
+Idol
+Illusionist
+Illustrator
+Imām
+Innkeeper
+Inquisitor
+Intellectual
+Interior designer
+Investigator
+Investor
+Jazz Musician
+Jedi knight
+Jedi
+Jester
+Jeweler
+Jock
+Journalist
+Judge
+Junkie
+K-pop star
+Khan
+King
+Kingsguard
+Knight errant
+Knight
+Lady-in-waiting
+Lady
+Lance Corporal
+Lancer
+Landscape architect
+Lawyer
+Leatherworker
+Lector
+Legal assistant
+Librarian
+Lich king
+Lieutenant Colonel
+Lifeguard
+Lord
+Loremaster
+Lumberjack
+Machinint
+Maffiosi
+Mage slayer
+Mage
+Magician
+Maid
+Maiden
+Major
+Makeup artist
+Marketer
+Marshal
+Mason
+Master Sergeant
+Matador
+Mathematician
+Mentor
+Mercenary
+Mermaid
+Merman
+Metalhead
+Miller
+Mime
+Mind reader
+Miner
+Missionary
+Mistress
+Model
+Monk
+Monster Hunter
+Mother Nature
+Mountaineer
+Muppet
+Muse
+Museum curator
+Music critic
+Music journalist
+Music producer
+Music teacher
+Musician
+Mystic
+Naruto-style ninja
+Necromancer
+Necrophage
+Nerd
+Ninja
+Nobleman
+Nomad
+Notary
+Nuncio
+Oathbreaker
+Office worker
+Oliarch
+One piece-style Pirate
+Opera Singer
+Oracle
+Ornithologist
+Page
+Painter
+Paladin
+Paleontologist
+Papal legate
+Paralegal
+Paramedic
+Park Ranger
+Pastor
+Patrician
+Peasant
+Personal trainer
+Phantom
+Pharao
+Philosopher
+Photographer
+Physician
+Physicist
+Pilgrim
+Pilot
+Pirate captain
+Pirate
+Plain Jane
+Playwright
+Plumber
+Pokemon Gym Leader
+Pokemon trainer
+Police officer
+Politician
+Pop Singer
+Pop star
+Pope
+Potter
+President
+Priest
+Prince
+Princess
+Printer
+Private First Class
+Private investigator
+Private
+Professor
+Programmer
+protagonist
+Protector
+Psychologist
+Punk Rocker
+Queen
+Rabbi
+Race car driver
+Ranger
+Rapper
+Record label executive
+Renaissance Person
+Reverend
+Robot
+Rock climber
+Rock Star
+Rogue
+Ronin
+Royal Guard
+Royalty
+Rune mage
+Safari Guide
+Sailor
+Saint
+Salaryman
+Salesperson
+Salsa Dancer
+Samurai
+Scholar
+Science officer
+Scientist
+Scribe
+Scuba diver
+Sculptor
+Second Lieutenant
+Secret Agent
+Secret lover
+Secretary
+Sentinel
+Sergeant Major of the Army
+Sergeant Major
+Sergeant
+Set designer
+Shadow assassin
+Shadowmage
+Shady figure
+Shaman
+Shaolinn Monk
+Shepherd
+Shieldmaiden
+Ship captain
+Shipbuilder
+Shoemaker
+Siege engineer
+Silk weaver
+Singer
+Sister
+Sith lord
+Sith
+Skateboarder
+Skydiver
+Spy
+Socialite
+Sociologist
+Soldier
+Sorcerer
+Soul reaver
+Sound engineer
+Southern Belle
+Space Alien
+Spartan
+Spellblade
+Spice merchant
+Spinner
+Spy
+Stablehand
+Staff Sergeant
+Star mage
+Starfleet captain
+Steeplejack
+Stormtrooper
+Student
+Sultan
+Summoner
+Sumo Wrestler
+Super model
+Superhero
+Surfer
+Surgeon
+Surveyor
+Swashbuckler
+Sword bearer
+Tailor
+Tanner
+Tax collector
+Taxi driver
+Teacher
+Technomancer
+Templar
+Theater director
+Theologian
+Theurge
+Thunderer
+Time traveler
+Titan
+Tomboy
+Toreador
+Tourist
+Town crier
+Trader
+Trailer trash
+Train conductor
+Tramp
+Translator
+Traveler
+Tribal Chief
+Trickster
+Troubadour
+Vagabond
+Valedictorian
+Valet
+Valkyrie
+Vampire hunter
+Vampire lord
+Veterinarian
+Vicar
+Video Game Character
+Video Game Boss
+Viking Berserker
+Viking Warrior
+Viking
+villain
+Vintner
+Vizier
+Wallflower
+Warden
+Warlock
+Warlord
+Warrior
+Watchmaker
+Waterbender
+Weaponsmith
+Weaver
+Windcaller
+Witch hunter
+Witch
+Witcher
+Wizard
+Woodcarver
+Writer
+Yoga instructor
+Yogi
+Zoologist
+Zorro
