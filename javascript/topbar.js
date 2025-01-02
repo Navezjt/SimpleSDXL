@@ -49,8 +49,6 @@ async function fetchTranslationsFor(newLocale) {
 function set_theme_by_ui(theme) {
     const gradioURL = window.location.href;
     const urls = gradioURL.split('?');
-    if (theme=="dark") new_theme="light";
-    if (theme=="light") new_theme="dark";
     const params = new URLSearchParams(window.location.search);
     const url_params = Object.fromEntries(params);
     let url_lang = locale_lang;
@@ -59,27 +57,28 @@ function set_theme_by_ui(theme) {
     }
     if (url_params["__theme"]!=null) {
         url_theme=url_params["__theme"];
-	if (url_theme == new_theme) 
+	if (url_theme == theme) 
 	    return
-	window.location.replace(urls[0]+"?__theme="+new_theme+"&__lang="+url_lang+"&t="+Date.now()+"."+Math.floor(Math.random() * 10000));
+	window.location.replace(urls[0]+"?__theme="+theme+"&__lang="+url_lang+"&t="+Date.now()+"."+Math.floor(Math.random() * 10000));
     }
 }
 
-function set_iframe_src(theme, lang, url) {
-    const url_params = Object.fromEntries(new URLSearchParams(window.location.search));
-    var theme_ifr = url_params['__theme'] || theme;
-    var lang_ifr = url_params['__lang'] || lang;
-    var newIframeUrl = url;
-    if (newIframeUrl.includes('?')) {
-        newIframeUrl += '&';
-    } else {
-        newIframeUrl += '?';
-    }
-    newIframeUrl += "__theme="+theme_ifr+"&__lang="+lang_ifr;
-    const instruction = gradioApp().getElementById('instruction');
-    if (instruction!=null) {
-	    instruction.src = newIframeUrl;
-    }
+function set_iframe_src(theme = 'default', lang = 'cn', url) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const themeParam = urlParams.get('__theme') || theme;
+    const langParam = urlParams.get('__lang') || lang;
+
+    console.log("langParam:"+langParam)
+
+    // 构建新的iframe URL
+    const newIframeUrl = `${url}${url.includes('?') ? '&' : '?'}__theme=${themeParam}&__lang=${langParam}`;
+
+    // 获取iframe元素并设置src属性
+    const iframe = gradioApp().getElementById('instruction');
+    if (iframe) {
+        iframe.src = newIframeUrl;
+    } 
+
 }
 
 function closeSysMsg() {
