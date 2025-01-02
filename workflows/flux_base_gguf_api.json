@@ -17,8 +17,8 @@
         0
       ],
       "vae": [
-        "29",
-        2
+        "10",
+        0
       ]
     },
     "class_type": "VAEDecode",
@@ -48,8 +48,8 @@
   },
   "12": {
     "inputs": {
-      "unet_name": "flux1-schnell.safetensors",
-      "weight_dtype": "fp8_e4m3fn"
+      "unet_name": "flux1-dev.safetensors",
+      "weight_dtype": "default"
     },
     "class_type": "UNETLoader",
     "_meta": {
@@ -96,10 +96,10 @@
   "17": {
     "inputs": {
       "scheduler": "simple",
-      "steps": 4,
+      "steps": 20,
       "denoise": 1,
       "model": [
-        "31",
+        "36",
         0
       ]
     },
@@ -111,7 +111,7 @@
   "22": {
     "inputs": {
       "model": [
-        "31",
+        "36",
         0
       ],
       "conditioning": [
@@ -126,7 +126,7 @@
   },
   "25": {
     "inputs": {
-      "noise_seed": 679033357040879
+      "noise_seed": 931669617070486
     },
     "class_type": "RandomNoise",
     "_meta": {
@@ -151,8 +151,8 @@
       "t5xxl": "a bottle with a rainbow galaxy inside it on top of a wooden table on a table in the middle of a modern kitchen",
       "guidance": 3.5,
       "clip": [
-        "29",
-        1
+        "11",
+        0
       ]
     },
     "class_type": "CLIPTextEncodeFlux",
@@ -171,7 +171,7 @@
   },
   "30": {
     "inputs": {
-      "ckpt_name": "flux1-schnell-fp8.safetensors"
+      "ckpt_name": "flux1-dev-fp8.safetensors"
     },
     "class_type": "CheckpointLoaderSimple",
     "_meta": {
@@ -180,16 +180,21 @@
   },
   "31": {
     "inputs": {
-      "double_blocks_cuda_size": 7,
-      "single_blocks_cuda_size": 7,
-      "model": [
-        "29",
-        0
-      ]
+      "lora_name": "art_lora.safetensors",
+      "strength_model": 1
     },
-    "class_type": "MZ_Flux1PartialLoad_Patch",
+    "class_type": "LoraLoaderModelOnly",
     "_meta": {
-      "title": "MinusZone - Flux1PartialLoad_Patch"
+      "title": "lora_1"
+    }
+  },
+  "36": {
+    "inputs": {
+      "unet_name": "flux1-dev-Q8_0.gguf"
+    },
+    "class_type": "UnetLoaderGGUF",
+    "_meta": {
+      "title": "base_model"
     }
   }
 }
